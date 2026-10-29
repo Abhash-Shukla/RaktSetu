@@ -1,0 +1,27 @@
+# Default LifeLine Matching Engine Configuration
+# Reference: docs/SRS.md section 8 and docs/PARAMETERS.md
+
+cooldown:
+  cooldownDaysMale: 90
+  cooldownDaysFemale: 120
+
+geography:
+  roadFactor: 1.3
+  locationFreshnessHours: 24
+
+urgencyProfiles:
+  CRITICAL:
+    proximity: 0.85
+    rarity: 0.15
+    responsiveness: 0.0
+  URGENT:
+    proximity: 0.65
+    rarity: 0.35
+    responsiveness: 0.0
+  ROUTINE:
+    proximity: 0.40
+    rarity: 0.60
+    responsiveness: 0.0
+
+selection:
+  defaultTopN: 5
