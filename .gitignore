@@ -18,4 +18,6 @@ target/
 Thumbs.db
 *.log
 .jqwik-database
+dependency-reduced-pom.xml
+results/
 

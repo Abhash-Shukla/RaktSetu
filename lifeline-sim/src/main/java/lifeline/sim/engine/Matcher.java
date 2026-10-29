@@ -30,4 +30,17 @@ public interface Matcher {
         List<DonorSnapshot> eligiblePool,
         Set<String> alreadyContacted
     );
+
+    /**
+     * Selects the next candidate donor to notify, passing the current simulation timestamp.
+     * Defaults to delegating to {@link #selectNextCandidate(BloodRequest, List, Set)}.
+     */
+    default Optional<String> selectNextCandidate(
+        BloodRequest request,
+        List<DonorSnapshot> eligiblePool,
+        Set<String> alreadyContacted,
+        java.time.Instant currentTime
+    ) {
+        return selectNextCandidate(request, eligiblePool, alreadyContacted);
+    }
 }

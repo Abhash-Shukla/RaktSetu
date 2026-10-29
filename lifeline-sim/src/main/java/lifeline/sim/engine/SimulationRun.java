@@ -534,7 +534,7 @@ public final class SimulationRun {
             return;
         }
 
-        Optional<String> selectedIdOpt = matcher.selectNextCandidate(req, eligiblePool, alreadyContacted);
+        Optional<String> selectedIdOpt = matcher.selectNextCandidate(req, eligiblePool, alreadyContacted, currentTime);
         if (selectedIdOpt.isEmpty()) {
             resolvedRequests.add(reqId);
             eventLog.add(new SimulationEvent(

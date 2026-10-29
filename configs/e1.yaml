@@ -1,0 +1,54 @@
+# E1 Experiment Configuration: Primary comparison across systems S0-S8 under response models M1-M3
+experiment: E1
+
+systems:
+  - S0
+  - S1
+  - S2
+  - S3
+  - S4
+  - S5
+  - S6
+  - S7
+  - S8
+
+responseModels:
+  - M1
+  - M2
+  - M3
+
+# Pre-registered reporting seeds (1-30) per docs/EVALUATION_PROTOCOL.md Section 6
+seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+
+outputDir: results
+parallelism: 4
