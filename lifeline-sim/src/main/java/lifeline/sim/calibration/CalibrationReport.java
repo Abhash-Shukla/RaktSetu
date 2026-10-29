@@ -2,7 +2,9 @@ package lifeline.sim.calibration;
 
 import lifeline.core.domain.BloodGroup;
 import lifeline.core.domain.BloodRequest;
+import lifeline.core.domain.DonorSnapshot;
 import lifeline.core.domain.Urgency;
+import lifeline.core.domain.ZoneMap;
 import lifeline.sim.model.LatentDonor;
 import lifeline.sim.model.SimulationParameters;
 import lifeline.sim.response.M1BaselineLogisticModel;
@@ -29,8 +31,35 @@ public final class CalibrationReport {
         double maxAcceptanceProbability,
         double topVsBottomWillingnessRatio,
         double medianResponseDelayMinutes,
-        double rankerVsRandomLift
-    ) {}
+        double observableProxyLiftOverRandom
+    ) {
+        /**
+         * Alias for {@link #observableProxyLiftOverRandom()}.
+         */
+        public double rankerVsRandomLift() {
+            return observableProxyLiftOverRandom;
+        }
+    }
+
+    /**
+     * Scores a candidate donor using EXCLUSIVELY observable snapshot fields (distance and history stats).
+     * Does NOT access latent traits (willingness, reliability, or Oracle).
+     * Note: This is an observable ranking proxy for calibration sanity checking; the actual S5 learned
+     * ranker (logistic regression on simulated history) is implemented in lifeline-eval.
+     */
+    public static double scoreObservableProxy(
+        DonorSnapshot snapshot,
+        String requestZone,
+        ZoneMap zoneMap,
+        double travelToleranceKm
+    ) {
+        double distKm = zoneMap.distanceKm(snapshot.homeZone(), requestZone);
+        // Proximity decay from observable distance
+        double proximityTerm = Math.pow(2.0, -distKm / travelToleranceKm);
+        // Smoothed accept rate from observable history (Beta(1, 2) prior per P-23)
+        double responsivenessTerm = (snapshot.historyStats().accepts() + 1.0) / (snapshot.historyStats().contacts() + 3.0);
+        return 0.70 * proximityTerm + 0.30 * responsivenessTerm;
+    }
 
     public static Metrics computeMetrics(World world, SimulationParameters params) {
         ResponseModel model = new M1BaselineLogisticModel(params);
@@ -139,13 +168,9 @@ public final class CalibrationReport {
             double distRandom = world.zoneMap().distanceKm(randomCandidate.homeZone(), testReq.zone());
             randomSum += model.trueAcceptanceProbability(randomCandidate, testReq, distRandom, 0, 14.0);
 
-            // Best candidate (highest predicted acceptance based on willingness / distance proxy)
+            // Best candidate chosen strictly using observable snapshot fields (distance and history stats)
             LatentDonor bestCandidate = Collections.max(candidates, Comparator.comparingDouble(
-                c -> {
-                    double dist = world.zoneMap().distanceKm(c.homeZone(), testReq.zone());
-                    // Learned ranker proxy (features available to S5)
-                    return c.willingness() / (1.0 + dist / params.travelToleranceKm());
-                }
+                c -> scoreObservableProxy(c.snapshot(), testReq.zone(), world.zoneMap(), params.travelToleranceKm())
             ));
             double distBest = world.zoneMap().distanceKm(bestCandidate.homeZone(), testReq.zone());
             topRankedSum += model.trueAcceptanceProbability(bestCandidate, testReq, distBest, 0, 14.0);
@@ -153,7 +178,7 @@ public final class CalibrationReport {
 
         double meanRandom = randomSum / evalTrials;
         double meanRanked = topRankedSum / evalTrials;
-        double rankerLift = meanRanked / Math.max(1e-4, meanRandom);
+        double observableProxyLift = meanRanked / Math.max(1e-4, meanRandom);
 
         return new Metrics(
             meanP,
@@ -164,7 +189,7 @@ public final class CalibrationReport {
             maxP,
             topVsBottomRatio,
             medianDelay,
-            rankerLift
+            observableProxyLift
         );
     }
 
@@ -188,7 +213,9 @@ public final class CalibrationReport {
         System.out.println("--------------------------------------------------------------------------------");
         System.out.printf("2. Top vs Bottom Willingness Ratio (Wu 2022 ~1.96x, P-15) : %.2fx%n", m.topVsBottomWillingnessRatio);
         System.out.printf("3. Response Delay Median (P-17 target ~30 min)            : %.1f min%n", m.medianResponseDelayMinutes);
-        System.out.printf("4. Learned Ranker Lift over Random (Wu 2022 1.25x - 2.0x) : %.2fx%n", m.rankerVsRandomLift);
+        System.out.printf("4. Observable-Proxy Lift over Random                     : %.2fx%n", m.observableProxyLiftOverRandom);
+        System.out.println("   [NOTE: Measured using observable history stats and distance proxy,");
+        System.out.println("    NOT the actual S5 learned ranker. S5 must be trained and measured in Phase 5.]");
         System.out.println("================================================================================");
     }
 

@@ -39,6 +39,7 @@ Every simulation parameter, its value (or range), and where it comes from. `SOUR
 | P-14 | Mean first-contact acceptance probability (active registered donor, emergency request) | 0.30 (0.10-0.50) | ASSUMPTION. Lower-bound context: cold re-recruitment 7.4-8.4% (Ou-Yang 2020). |
 | P-15 | Donor heterogeneity | Beta with mean P-14, concentration kappa = 4 (2-10), set so top-vs-bottom willingness groups differ by about 2x | SOURCE-informed: Wu 2022 (1.96x). Calibrate and report. |
 | P-16 | Intention-behaviour gap | Acceptance is a noisy function of observables; no group near 100% | SOURCE-informed: Ou-Yang 2020 |
+| P-16a | Latent donor reliability | Uniform(0.75, 1.0) implemented in M1/M2/M3 | TODO(human): specify distribution and literature source for latent donor reliability |
 | P-17 | Response delay | Lognormal, median 30 min, sigma 1.0 (median 10-120 min) | ASSUMPTION |
 | P-18 | Travel tolerance (distance at which acceptance halves) | Median 10 km (5-25 km) | ASSUMPTION |
 | P-19 | M2 fatigue | Acceptance x 0.8 per contact in the previous 30 days (0.6-0.95) | ASSUMPTION |
@@ -57,3 +58,4 @@ Every simulation parameter, its value (or range), and where it comes from. `SOUR
 - Check P-01 against the full text of Patidar & Dhiman; look for a joint (ABO x Rh) table.
 - Source or revise P-27.
 - Approve or revise P-28.
+- Specify or approve distribution and literature source for latent donor reliability (P-16a; currently implemented as Uniform(0.75, 1.0) without explicit source).
