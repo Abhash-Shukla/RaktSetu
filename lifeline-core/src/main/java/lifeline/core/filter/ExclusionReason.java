@@ -20,6 +20,11 @@ public enum ExclusionReason {
     PAUSED,
 
     /**
+     * Donor has an outstanding notification for another active request and cannot be double-notified.
+     */
+    OUTSTANDING_NOTIFICATION,
+
+    /**
      * Donor last donated inside the statutory cooldown window (90 days for men, 120 days for women).
      */
     IN_COOLDOWN

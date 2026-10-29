@@ -1,22 +1,20 @@
 package lifeline.core.domain;
 
+import lifeline.core.state.DonorState;
+
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
  * Immutable snapshot of observable donor state seen by the matching engine.
- * <p>
- * Under AGENTS.md Section 3, latent simulation traits are strictly forbidden here;
- * only observable fields and derived history are exposed to the engine.
  *
  * @param id               unique donor identifier
  * @param bloodGroup       ABO/Rh blood phenotype
  * @param sex              biological sex (used exclusively to select cooldown window)
  * @param homeZone         registered home geographical zone
  * @param lastDonationDate date of most recent donation, or null if never donated
- * @param availability     whether donor has marked themselves available
- * @param paused           whether donor is temporarily paused (e.g. active patient)
+ * @param state            current donor lifecycle state (e.g. AVAILABLE, NOTIFIED, PAUSED)
  * @param currentLocation  optional recent location with confirmation timestamp
  * @param historyStats     observable outreach history
  */
@@ -26,8 +24,7 @@ public record DonorSnapshot(
     Sex sex,
     String homeZone,
     LocalDate lastDonationDate,
-    boolean availability,
-    boolean paused,
+    DonorState state,
     Optional<CurrentLocation> currentLocation,
     HistoryStats historyStats
 ) {
@@ -36,8 +33,35 @@ public record DonorSnapshot(
         Objects.requireNonNull(bloodGroup, "bloodGroup cannot be null");
         Objects.requireNonNull(sex, "sex cannot be null");
         Objects.requireNonNull(homeZone, "homeZone cannot be null");
+        Objects.requireNonNull(state, "state cannot be null");
         Objects.requireNonNull(currentLocation, "currentLocation cannot be null (use Optional.empty())");
         Objects.requireNonNull(historyStats, "historyStats cannot be null");
+    }
+
+    /**
+     * Backward-compatible constructor accepting boolean flags.
+     */
+    public DonorSnapshot(
+        String id,
+        BloodGroup bloodGroup,
+        Sex sex,
+        String homeZone,
+        LocalDate lastDonationDate,
+        boolean availability,
+        boolean paused,
+        Optional<CurrentLocation> currentLocation,
+        HistoryStats historyStats
+    ) {
+        this(
+            id,
+            bloodGroup,
+            sex,
+            homeZone,
+            lastDonationDate,
+            paused ? DonorState.PAUSED : (availability ? DonorState.AVAILABLE : DonorState.DECLINED),
+            currentLocation,
+            historyStats
+        );
     }
 
     /**
@@ -86,10 +110,45 @@ public record DonorSnapshot(
             sex,
             homeZone,
             lastDonationDate,
-            availability,
             paused,
+            availability,
             Optional.ofNullable(currentLocation),
             historyStats != null ? historyStats : HistoryStats.empty()
         );
+    }
+
+    /**
+     * Returns true if the donor is in the AVAILABLE state.
+     */
+    public boolean availability() {
+        return state == DonorState.AVAILABLE;
+    }
+
+    /**
+     * Returns true if the donor is in the PAUSED state.
+     */
+    public boolean paused() {
+        return state == DonorState.PAUSED;
+    }
+
+    /**
+     * Returns true if the donor has an active outstanding notification.
+     */
+    public boolean isNotified() {
+        return state == DonorState.NOTIFIED;
+    }
+
+    /**
+     * Returns a new snapshot with an updated donor state.
+     */
+    public DonorSnapshot withState(DonorState newState) {
+        return new DonorSnapshot(id, bloodGroup, sex, homeZone, lastDonationDate, newState, currentLocation, historyStats);
+    }
+
+    /**
+     * Automatically pauses the donor (e.g. when donor becomes a patient).
+     */
+    public DonorSnapshot pause() {
+        return withState(state.canTransitionTo(DonorState.PAUSED) ? state.transitionTo(DonorState.PAUSED) : DonorState.PAUSED);
     }
 }

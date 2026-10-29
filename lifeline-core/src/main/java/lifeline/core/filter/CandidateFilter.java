@@ -143,12 +143,12 @@ public final class CandidateFilter {
             );
         }
 
-        // 2. Availability check
-        if (!donor.availability()) {
+        // 2. Outstanding notification check (no double notification)
+        if (donor.isNotified()) {
             return new ExcludedDonor(
                 donor,
-                ExclusionReason.UNAVAILABLE,
-                "Donor is marked unavailable"
+                ExclusionReason.OUTSTANDING_NOTIFICATION,
+                "Donor has an outstanding notification for another active request"
             );
         }
 
@@ -158,6 +158,15 @@ public final class CandidateFilter {
                 donor,
                 ExclusionReason.PAUSED,
                 "Donor account is paused"
+            );
+        }
+
+        // 4. Availability check
+        if (!donor.availability()) {
+            return new ExcludedDonor(
+                donor,
+                ExclusionReason.UNAVAILABLE,
+                "Donor is not in AVAILABLE state (current state: " + donor.state() + ")"
             );
         }
 
