@@ -1,0 +1,38 @@
+# docs/population.yaml  (Phase 4 copies this to lifeline-sim/src/main/resources/sim/population.yaml)
+# ABO/Rh distribution for the synthetic donor population. The agent must not change these values.
+
+source: >
+  Patidar GK, Dhiman Y. Distribution of ABO and Rh (D) blood groups in India:
+  a systematic review. ISBT Science Series. 2021;16(1):37-48.
+  doi:10.1111/voxs.12576. Pooled data of 112 studies from 23 states
+  (1,429,996 donors), studies published 2001-2018.
+
+# Pan-India totals reported in the source (abstract):
+reported_abo:
+  A: 0.2316
+  B: 0.3410
+  O: 0.3456
+  AB: 0.0818
+reported_rh:
+  positive: 0.9413
+  negative: 0.0587
+
+# The source reports ABO and Rh separately. The 8-group joint split below is
+# DERIVED, not reported: frequency = ABO share x Rh share.
+derivation: "ASSUMPTION: ABO and Rh(D) are statistically independent."
+derivation_limitation: >
+  In real populations the Rh-negative share differs by ABO group, so this split
+  is approximate. The scarcity sweep (experiment E3) varies rare-type shares to
+  test sensitivity to this assumption.
+
+frequencies:
+  O+: 0.325313
+  B+: 0.320983
+  A+: 0.218005
+  AB+: 0.076998
+  O-: 0.020287
+  B-: 0.020017
+  A-: 0.013595
+  AB-: 0.004802
+
+human_verified: false   # set to true after checking the numbers against the full text of the source

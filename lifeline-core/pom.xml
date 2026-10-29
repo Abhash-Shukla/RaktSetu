@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.lifeline</groupId>
+        <artifactId>lifeline</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>lifeline-core</artifactId>
+    <name>LifeLine :: Core</name>
+    <description>Pure Java domain, matching engine, filters, factors, explanations, and fallback (no Spring)</description>
+
+    <!-- lifeline-core has no dependencies; it is pure Java (AGENTS.md section 2) -->
+    <dependencies>
+    </dependencies>
+</project>
