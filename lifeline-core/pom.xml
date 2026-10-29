@@ -14,7 +14,20 @@
     <name>LifeLine :: Core</name>
     <description>Pure Java domain, matching engine, filters, factors, explanations, and fallback (no Spring)</description>
 
-    <!-- lifeline-core has no dependencies; it is pure Java (AGENTS.md section 2) -->
     <dependencies>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
