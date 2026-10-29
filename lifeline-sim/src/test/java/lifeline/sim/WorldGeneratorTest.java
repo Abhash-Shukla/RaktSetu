@@ -151,8 +151,11 @@ class WorldGeneratorTest {
         // Days since donation is Uniform(0, 365)
         // Men cooldown = 90d / 365d ~ 24.6%
         // Women cooldown = 120d / 365d ~ 32.8%
-        assertThat(maleCooldownCount).isGreaterThan(3000);
-        assertThat(femaleCooldownCount).isGreaterThan(500);
+        // Under 94% male / 6% female split (P-27, N=20,000):
+        // Expected male in cooldown: ~18,800 * 24.6% ~ 4,625
+        // Expected female in cooldown: ~1,200 * 32.8% ~ 394
+        assertThat(maleCooldownCount).isGreaterThan(3500);
+        assertThat(femaleCooldownCount).isGreaterThan(250);
     }
 
     @SuppressWarnings("unchecked")

@@ -35,4 +35,4 @@ frequencies:
   A-: 0.013595
   AB-: 0.004802
 
-human_verified: false   # set to true after checking the numbers against the full text of the source
+human_verified: true   # Reported ABO and Rh(D) marginal totals verified against Patidar & Dhiman (2021); 8-group joint split is derived under statistical independence assumption, not directly measured.

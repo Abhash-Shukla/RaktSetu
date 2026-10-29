@@ -11,8 +11,8 @@ world:
   historyMonths: 18          # P-23
 
 demographics:
-  maleShare: 0.85            # P-27
-  femaleShare: 0.15          # P-27
+  maleShare: 0.94            # P-27
+  femaleShare: 0.06          # P-27
   availabilityShare: 0.70    # P-12
   currentLocationShare: 0.30 # P-13
   freshnessWindowHours: 24   # P-13

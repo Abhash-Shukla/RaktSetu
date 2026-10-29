@@ -87,7 +87,7 @@ public final class WorldGenerator {
             // Blood group from population.yaml
             BloodGroup group = sampleBloodGroup(rng);
 
-            // Sex split: 85% male / 15% female (P-27)
+            // Sex split: 94% male / 6% female (P-27)
             Sex sex = rng.nextDouble() < params.maleShare() ? Sex.MALE : Sex.FEMALE;
 
             // Home zone from uneven density distribution
@@ -117,7 +117,7 @@ public final class WorldGenerator {
             double beta = (1.0 - params.meanWillingness()) * params.heterogeneityKappa();
             double willingness = RandomDistributionUtil.sampleBeta(alpha, beta, rng);
 
-            // Reliability in [0.75, 1.0] (P-16)
+            // Reliability ~ Uniform(0.75, 1.0) (P-16a assumption, intention-behaviour gap)
             double reliability = 0.75 + 0.25 * rng.nextDouble();
 
             // Delay scale around median 30 min (P-17)
