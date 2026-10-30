@@ -20,7 +20,7 @@ class ExperimentRunnerTest {
             "TEST_EXP",
             List.of("S0", "S2", "S6"),
             List.of("M1"),
-            List.of(42L),
+            List.of(1042L),
             tempDir.resolve("run1").toString(),
             1
         );
@@ -29,7 +29,7 @@ class ExperimentRunnerTest {
             "TEST_EXP",
             List.of("S0", "S2", "S6"),
             List.of("M1"),
-            List.of(42L),
+            List.of(1042L),
             tempDir.resolve("run2").toString(),
             1
         );
@@ -66,6 +66,6 @@ class ExperimentRunnerTest {
         assertThat(manifestJson).contains("\"experiment\": \"TEST_EXP\"");
         assertThat(manifestJson).contains("\"git_commit\"");
         assertThat(manifestJson).contains("\"config_hash\"");
-        assertThat(manifestJson).contains("\"seeds\": [42]");
+        assertThat(manifestJson).contains("\"seeds\": [1042]");
     }
 }

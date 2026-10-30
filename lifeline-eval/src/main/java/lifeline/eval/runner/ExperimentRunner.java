@@ -6,6 +6,9 @@ import lifeline.eval.baseline.BaselineMatcherFactory;
 import lifeline.eval.metric.EvaluationMetrics;
 import lifeline.eval.metric.MetricCalculator;
 import lifeline.eval.metric.TidyMetricRow;
+import lifeline.eval.stats.EvaluationDatasetType;
+import lifeline.eval.stats.StatisticalAnalyzer;
+import lifeline.eval.stats.StatisticalComparison;
 import lifeline.sim.engine.Matcher;
 import lifeline.sim.engine.SimulationResult;
 import lifeline.sim.engine.SimulationRun;
@@ -34,10 +37,15 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Config-driven parallel experiment runner executing evaluation protocols.
- * Writes a tidy CSV per experiment and emits a run manifest JSON.
+ * <p>
+ * Optimized per Priority 2: Generates World and request sets once per seed,
+ * reusing the immutable synthetic world across all systems and response models.
+ * Writes a tidy CSV per experiment, emits statistical comparison summaries,
+ * and records a run manifest JSON.
  */
 public final class ExperimentRunner {
 
@@ -47,6 +55,7 @@ public final class ExperimentRunner {
     private final Path configPath;
     private final SimulationParameters simParams;
     private final Map<BloodGroup, Double> populationFrequencies;
+    private final AtomicInteger worldGenerationCount = new AtomicInteger(0);
 
     public ExperimentRunner(ExperimentConfig config, Path configPath) {
         this.config = Objects.requireNonNull(config, "config cannot be null");
@@ -59,33 +68,63 @@ public final class ExperimentRunner {
         this(config, null);
     }
 
+    public int worldGenerationCount() {
+        return worldGenerationCount.get();
+    }
+
     /**
      * Executes the experiment and writes results to disk.
      *
      * @return summary of execution
      */
     public ExperimentRunResult execute() {
+        EvaluationDatasetType datasetType = StatisticalAnalyzer.classifyAndValidateSeeds(new HashSet<>(config.seeds()));
+
         Instant startTime = Instant.now();
-        log.info("Starting experiment {} across {} systems, {} response models, {} seeds (parallelism={})",
-            config.experiment(), config.systems().size(), config.responseModels().size(), config.seeds().size(), config.parallelism()
+        worldGenerationCount.set(0);
+
+        int totalSimulations = config.seeds().size() * config.systems().size() * config.responseModels().size();
+        log.info("Starting experiment {} across {} systems, {} response models, {} seeds (total runs={}, parallelism={}, dataset_type={})",
+            config.experiment(), config.systems().size(), config.responseModels().size(), config.seeds().size(), totalSimulations, config.parallelism(), datasetType
         );
 
         ExecutorService executor = Executors.newFixedThreadPool(config.parallelism());
-        List<Callable<List<TidyMetricRow>>> tasks = new ArrayList<>();
-
-        for (long seed : config.seeds()) {
-            for (String system : config.systems()) {
-                for (String modelName : config.responseModels()) {
-                    tasks.add(() -> executeSingleRun(config.experiment(), system, modelName, seed));
-                }
-            }
-        }
-
         List<TidyMetricRow> allRows = new ArrayList<>();
+
         try {
-            List<Future<List<TidyMetricRow>>> futures = executor.invokeAll(tasks);
-            for (Future<List<TidyMetricRow>> future : futures) {
-                allRows.addAll(future.get());
+            WorldGenerator worldGen = new WorldGenerator(simParams);
+            RequestGenerator reqGen = new RequestGenerator(simParams, populationFrequencies);
+
+            // Execute seed by seed: generate world and requests ONCE per seed
+            for (long seed : config.seeds()) {
+                World world = worldGen.generate(seed);
+                worldGenerationCount.incrementAndGet();
+
+                List<String> zones = new ArrayList<>(world.zoneMap().centroids().keySet());
+                List<BloodRequest> requests = reqGen.generateRequests(
+                    zones,
+                    world.referenceTime(),
+                    new SplittableRandom(seed + 100L)
+                );
+
+                List<Callable<List<TidyMetricRow>>> seedTasks = new ArrayList<>();
+                for (String system : config.systems()) {
+                    for (String modelName : config.responseModels()) {
+                        seedTasks.add(() -> executeSingleSimulation(
+                            config.experiment(),
+                            system,
+                            modelName,
+                            seed,
+                            world,
+                            requests
+                        ));
+                    }
+                }
+
+                List<Future<List<TidyMetricRow>>> futures = executor.invokeAll(seedTasks);
+                for (Future<List<TidyMetricRow>> future : futures) {
+                    allRows.addAll(future.get());
+                }
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Experiment execution encountered an error", e);
@@ -110,7 +149,7 @@ public final class ExperimentRunner {
         try {
             Files.createDirectories(outDir);
 
-            // Write CSV
+            // 1. Write tidy CSV
             String csvFilename = config.experiment().toLowerCase() + "_results.csv";
             Path csvPath = outDir.resolve(csvFilename);
             try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(csvPath, StandardCharsets.UTF_8))) {
@@ -120,7 +159,31 @@ public final class ExperimentRunner {
                 }
             }
 
-            // Write manifest JSON
+            // 2. Perform statistical analysis and write summaries
+            Path statCsvPath = null;
+            Path statReportPath = null;
+            String statCsvFilename = null;
+
+            if (config.seeds().size() < StatisticalAnalyzer.MIN_PAIRED_SEEDS_FOR_INFERENCE) {
+                log.info("Experiment {} executed with {} seed(s). Inferential statistical analysis skipped (minimum {} required for paired testing). Ordinary simulation metrics written to {}.",
+                    config.experiment(), config.seeds().size(), StatisticalAnalyzer.MIN_PAIRED_SEEDS_FOR_INFERENCE, csvFilename);
+            } else {
+                StatisticalAnalyzer analyzer = new StatisticalAnalyzer();
+                List<StatisticalComparison> comparisons = analyzer.analyze(allRows);
+
+                if (!comparisons.isEmpty()) {
+                    statCsvFilename = config.experiment().toLowerCase() + "_statistical_summary.csv";
+                    statCsvPath = outDir.resolve(statCsvFilename);
+                    analyzer.writeCsv(comparisons, statCsvPath);
+
+                    String reportFilename = config.experiment().toLowerCase() + "_statistical_report.md";
+                    statReportPath = outDir.resolve(reportFilename);
+                    String mdReport = analyzer.generateMarkdownReport(comparisons);
+                    Files.writeString(statReportPath, mdReport, StandardCharsets.UTF_8);
+                }
+            }
+
+            // 3. Write manifest JSON
             String manifestFilename = "run_manifest.json";
             Path manifestPath = outDir.resolve(manifestFilename);
             String gitCommit = resolveGitCommit();
@@ -130,27 +193,33 @@ public final class ExperimentRunner {
                 gitCommit,
                 configHash,
                 config.experiment(),
+                datasetType,
                 config.systems(),
                 config.responseModels(),
                 config.seeds(),
                 startTime,
                 endTime,
                 durationSeconds,
-                tasks.size(),
-                csvFilename
+                totalSimulations,
+                worldGenerationCount.get(),
+                csvFilename,
+                statCsvFilename
             );
             Files.writeString(manifestPath, manifestJson, StandardCharsets.UTF_8);
 
-            log.info("Experiment {} complete. Wrote {} rows to {} and manifest to {}",
-                config.experiment(), allRows.size(), csvPath, manifestPath
+            log.info("Experiment {} complete (duration={}s, world_gens={}). Wrote {} rows to {} and manifest to {}",
+                config.experiment(), String.format(Locale.ROOT, "%.2f", durationSeconds), worldGenerationCount.get(), allRows.size(), csvPath, manifestPath
             );
 
             return new ExperimentRunResult(
                 config.experiment(),
                 csvPath,
                 manifestPath,
+                statCsvPath,
+                statReportPath,
                 allRows.size(),
-                tasks.size(),
+                totalSimulations,
+                worldGenerationCount.get(),
                 durationSeconds,
                 allRows
             );
@@ -160,7 +229,36 @@ public final class ExperimentRunner {
     }
 
     /**
-     * Executes an isolated single simulation evaluation run for a given (system, model, seed) tuple.
+     * Executes a single simulation run using a pre-generated immutable World and request set.
+     */
+    public List<TidyMetricRow> executeSingleSimulation(
+        String experiment,
+        String system,
+        String modelName,
+        long seed,
+        World world,
+        List<BloodRequest> requests
+    ) {
+        ResponseModel responseModel = createResponseModel(modelName, simParams);
+        Oracle oracle = new SimulatedOracle(world.latentDonors(), responseModel);
+        Matcher matcher = BaselineMatcherFactory.create(
+            system,
+            world,
+            oracle,
+            new SplittableRandom(seed + 200L),
+            seed
+        );
+
+        SimulationRun runner = new SimulationRun();
+        SimulationResult result = runner.run(world, matcher, responseModel, requests, seed);
+
+        EvaluationMetrics metrics = MetricCalculator.calculate(result, requests, world, oracle);
+        return metrics.toTidyRows(experiment, system, modelName, seed);
+    }
+
+    /**
+     * Executes an isolated single simulation evaluation run generating its own world.
+     * Maintained for standalone invocations.
      */
     public List<TidyMetricRow> executeSingleRun(
         String experiment,
@@ -179,21 +277,7 @@ public final class ExperimentRunner {
             new SplittableRandom(seed + 100L)
         );
 
-        ResponseModel responseModel = createResponseModel(modelName, simParams);
-        Oracle oracle = new SimulatedOracle(world.latentDonors(), responseModel);
-        Matcher matcher = BaselineMatcherFactory.create(
-            system,
-            world,
-            oracle,
-            new SplittableRandom(seed + 200L),
-            seed
-        );
-
-        SimulationRun runner = new SimulationRun();
-        SimulationResult result = runner.run(world, matcher, responseModel, requests, seed);
-
-        EvaluationMetrics metrics = MetricCalculator.calculate(result, requests, world, oracle);
-        return metrics.toTidyRows(experiment, system, modelName, seed);
+        return executeSingleSimulation(experiment, system, modelName, seed, world, requests);
     }
 
     public static ResponseModel createResponseModel(String modelName, SimulationParameters params) {
@@ -240,6 +324,7 @@ public final class ExperimentRunner {
         String gitCommit,
         String configHash,
         String experiment,
+        EvaluationDatasetType datasetType,
         List<String> systems,
         List<String> responseModels,
         List<Long> seeds,
@@ -247,13 +332,16 @@ public final class ExperimentRunner {
         Instant end,
         double durationSeconds,
         int totalRuns,
-        String csvFile
+        int worldGenerations,
+        String csvFile,
+        String statSummaryFile
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         sb.append(String.format("  \"git_commit\": \"%s\",\n", gitCommit));
         sb.append(String.format("  \"config_hash\": \"%s\",\n", configHash));
         sb.append(String.format("  \"experiment\": \"%s\",\n", experiment));
+        sb.append(String.format("  \"dataset_type\": \"%s\",\n", datasetType.name()));
         sb.append(String.format("  \"systems\": %s,\n", toJsonArray(systems)));
         sb.append(String.format("  \"response_models\": %s,\n", toJsonArray(responseModels)));
         sb.append(String.format("  \"seeds\": %s,\n", seeds.toString()));
@@ -261,8 +349,14 @@ public final class ExperimentRunner {
         sb.append(String.format("  \"timestamp_end\": \"%s\",\n", end));
         sb.append(String.format("  \"duration_seconds\": %.3f,\n", durationSeconds));
         sb.append(String.format("  \"total_runs\": %d,\n", totalRuns));
-        sb.append(String.format("  \"csv_file\": \"%s\"\n", csvFile));
-        sb.append("}\n");
+        sb.append(String.format("  \"world_generations\": %d,\n", worldGenerations));
+        sb.append(String.format("  \"csv_file\": \"%s\"", csvFile));
+        if (statSummaryFile != null) {
+            sb.append(",\n").append(String.format("  \"statistical_summary_file\": \"%s\"", statSummaryFile));
+        } else {
+            sb.append(",\n").append("  \"statistical_summary_file\": null");
+        }
+        sb.append("\n}\n");
         return sb.toString();
     }
 

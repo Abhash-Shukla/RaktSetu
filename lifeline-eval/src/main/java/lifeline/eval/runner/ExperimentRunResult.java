@@ -12,9 +12,23 @@ public record ExperimentRunResult(
     String experiment,
     Path csvPath,
     Path manifestPath,
+    Path statisticalSummaryPath,
+    Path statisticalReportPath,
     int totalMetricRows,
     int totalSimulationRuns,
+    int worldGenerations,
     double durationSeconds,
     List<TidyMetricRow> rows
 ) {
+    public ExperimentRunResult(
+        String experiment,
+        Path csvPath,
+        Path manifestPath,
+        int totalMetricRows,
+        int totalSimulationRuns,
+        double durationSeconds,
+        List<TidyMetricRow> rows
+    ) {
+        this(experiment, csvPath, manifestPath, null, null, totalMetricRows, totalSimulationRuns, 0, durationSeconds, rows);
+    }
 }

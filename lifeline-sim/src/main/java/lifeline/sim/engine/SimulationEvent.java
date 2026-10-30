@@ -27,3 +27,4 @@ public record SimulationEvent(
         Objects.requireNonNull(requestId, "requestId cannot be null");
     }
 }
+
