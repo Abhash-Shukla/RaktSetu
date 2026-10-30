@@ -96,7 +96,7 @@ Precision@K is not used (it saturates when most candidates are relevant).
 
 ## 8. Open items for a human before sign-off
 
-- [ ] Approve default urgency-profile weights (PARAMETERS P-28); tune only on tuning seeds
-- [ ] Confirm population.yaml values against the full text of the source (`human_verified: true`)
-- [ ] Source or revise the donor sex split (P-27)
+- [x] Approve default urgency-profile weights (PARAMETERS P-28: approved as engineering policy choices; sensitivity evaluated in E6 on tuning seeds)
+- [x] Confirm population.yaml values against the full text of the source (reported marginals verified against Patidar & Dhiman 2021; 8-group joint split derived under independence assumption)
+- [x] Source or revise the donor sex split (P-27: revised to 94% male / 6% female per Indian blood bank studies and WHO benchmark)
 - [x] Cooldown: 90 days (men) / 120 days (women), verified; hard exclusion

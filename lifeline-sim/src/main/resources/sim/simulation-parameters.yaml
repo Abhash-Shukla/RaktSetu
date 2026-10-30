@@ -1,0 +1,52 @@
+# Simulation Parameters anchored in docs/PARAMETERS.md
+# All values correspond directly to their respective P-xx IDs.
+
+world:
+  donorPoolSize: 20000        # P-03
+  zoneCount: 40              # P-04
+  densityLognormalSigma: 0.8 # P-04
+  roadFactor: 1.3            # P-04
+  horizonDays: 30            # P-05
+  meanContactsPerDonor: 4.0  # P-23
+  historyMonths: 18          # P-23
+
+demographics:
+  maleShare: 0.94            # P-27
+  femaleShare: 0.06          # P-27
+  availabilityShare: 0.70    # P-12
+  currentLocationShare: 0.30 # P-13
+  freshnessWindowHours: 24   # P-13
+  cooldownDaysMale: 90       # P-10
+  cooldownDaysFemale: 120    # P-10
+  maxDonationAgeDays: 365    # P-11
+
+latentDonor:
+  meanWillingness: 0.30      # P-14
+  heterogeneityKappa: 4.0    # P-15 (alpha=1.2, beta=2.8)
+  delayMedianMinutes: 30.0   # P-17
+  delaySigma: 1.0            # P-17
+  travelToleranceKm: 10.0    # P-18
+
+requests:
+  arrivalMeanPerZonePerDay: 0.5 # P-05
+  urgencyShareCritical: 0.20 # P-06
+  urgencyShareUrgent: 0.40   # P-06
+  urgencyShareRoutine: 0.40  # P-06
+  deadlineHoursCritical: 2   # P-07
+  deadlineHoursUrgent: 6     # P-07
+  deadlineHoursRoutine: 24   # P-07
+  attemptBudget: 10          # P-24
+  expiryMinutesCritical: 20  # P-25
+  expiryMinutesUrgent: 45    # P-25
+  expiryMinutesRoutine: 180  # P-25
+
+responseModels:
+  m1:
+    urgencyCriticalBonus: 0.15 # P-21 (+15% relative)
+  m2:
+    fatigueFactor: 0.80        # P-19 (x0.8 per contact in previous 30 days)
+    timeOfDayAmplitude: 0.20   # P-20 (+/- 20% relative)
+    urgencyCriticalBonus: 0.15 # P-21
+  m3:
+    distanceCoefficient: 0.0   # P-22 (near zero)
+    hiddenZoneAffinityLogit: 0.5 # P-22 (+/- 0.5 logit)
