@@ -40,6 +40,11 @@ public final class BaselineMatcherFactory {
                 Objects.requireNonNull(oracle, "oracle is required for S8");
                 yield new S8OracleMatcher(oracle, zoneMap);
             }
+            case "S6_NO_PROXIMITY" -> E2AblationMatcher.createNoProximity(zoneMap);
+            case "S6_NO_RARITY" -> E2AblationMatcher.createNoRarity(zoneMap);
+            case "S6_NO_FRESHNESS" -> E2AblationMatcher.createNoFreshness(zoneMap);
+            case "S6_SINGLE_URGENCY" -> E2AblationMatcher.createSingleUrgency(zoneMap);
+            case "S7_NO_RESPONSIVENESS" -> E2AblationMatcher.createS7NoResponsiveness(zoneMap);
             default -> throw new IllegalArgumentException("Unknown system ID: " + systemId);
         };
     }

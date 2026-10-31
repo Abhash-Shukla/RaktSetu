@@ -55,23 +55,68 @@ public final class StatisticalAnalyzer {
     public static final int MIN_PAIRED_SEEDS_FOR_INFERENCE = 6;
     public static final int REQUIRED_REPORTING_SEEDS = 30;
 
-    private static final List<String> DEFAULT_CANDIDATES = List.of("S6", "S7");
-    private static final List<String> DEFAULT_BASELINES = List.of("S0", "S2", "S3", "S4", "S5");
+    public static final List<String> DEFAULT_CANDIDATES = List.of("S6", "S7");
+    public static final List<String> DEFAULT_BASELINES = List.of("S0", "S2", "S3", "S4", "S5");
+
+    public static final Map<String, List<String>> E2_MAPPINGS = Map.of(
+        "S6", List.of("S6_NO_PROXIMITY", "S6_NO_RARITY", "S6_NO_FRESHNESS", "S6_SINGLE_URGENCY"),
+        "S7", List.of("S7_NO_RESPONSIVENESS")
+    );
 
     private final double alpha;
     private final long bootstrapSeed;
     private final List<String> candidateSystems;
     private final List<String> baselineSystems;
+    private final Map<String, List<String>> candidateToBaselines;
+
+    public StatisticalAnalyzer(double alpha, long bootstrapSeed, Map<String, List<String>> candidateToBaselines) {
+        this.alpha = alpha > 0.0 && alpha < 1.0 ? alpha : DEFAULT_ALPHA;
+        this.bootstrapSeed = bootstrapSeed;
+        Objects.requireNonNull(candidateToBaselines, "candidateToBaselines cannot be null");
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> e : candidateToBaselines.entrySet()) {
+            copy.put(e.getKey(), List.copyOf(e.getValue()));
+        }
+        this.candidateToBaselines = Collections.unmodifiableMap(copy);
+        this.candidateSystems = List.copyOf(copy.keySet());
+        Set<String> allBases = new LinkedHashSet<>();
+        copy.values().forEach(allBases::addAll);
+        this.baselineSystems = List.copyOf(allBases);
+    }
 
     public StatisticalAnalyzer(double alpha, long bootstrapSeed, List<String> candidates, List<String> baselines) {
         this.alpha = alpha > 0.0 && alpha < 1.0 ? alpha : DEFAULT_ALPHA;
         this.bootstrapSeed = bootstrapSeed;
         this.candidateSystems = candidates != null && !candidates.isEmpty() ? List.copyOf(candidates) : DEFAULT_CANDIDATES;
         this.baselineSystems = baselines != null && !baselines.isEmpty() ? List.copyOf(baselines) : DEFAULT_BASELINES;
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        for (String c : this.candidateSystems) {
+            map.put(c, this.baselineSystems);
+        }
+        this.candidateToBaselines = Collections.unmodifiableMap(map);
     }
 
     public StatisticalAnalyzer() {
         this(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, DEFAULT_CANDIDATES, DEFAULT_BASELINES);
+    }
+
+    public static StatisticalAnalyzer forExperiment(String experiment) {
+        if ("E2".equalsIgnoreCase(experiment)) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E2_MAPPINGS);
+        }
+        return new StatisticalAnalyzer();
+    }
+
+    public List<String> candidateSystems() {
+        return candidateSystems;
+    }
+
+    public List<String> baselineSystems() {
+        return baselineSystems;
+    }
+
+    public Map<String, List<String>> candidateToBaselines() {
+        return candidateToBaselines;
     }
 
     /**
@@ -172,7 +217,10 @@ public final class StatisticalAnalyzer {
                 MetricDirection direction = MetricDirection.forMetric(metric);
                 Map<String, Map<Long, Double>> systemMap = metricEntry.getValue();
 
-                for (String candidate : candidateSystems) {
+                for (Map.Entry<String, List<String>> entry : candidateToBaselines.entrySet()) {
+                    String candidate = entry.getKey();
+                    List<String> baselines = entry.getValue();
+
                     Map<Long, Double> candSeedMap = systemMap.get(candidate);
                     if (candSeedMap == null || candSeedMap.isEmpty()) {
                         continue;
@@ -181,7 +229,7 @@ public final class StatisticalAnalyzer {
                     // Pre-comparison container for a candidate's baseline family
                     List<IntermediateComparison> family = new ArrayList<>();
 
-                    for (String baseline : baselineSystems) {
+                    for (String baseline : baselines) {
                         if (candidate.equals(baseline)) {
                             continue;
                         }

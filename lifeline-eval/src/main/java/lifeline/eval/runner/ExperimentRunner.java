@@ -168,7 +168,7 @@ public final class ExperimentRunner {
                 log.info("Experiment {} executed with {} seed(s). Inferential statistical analysis skipped (minimum {} required for paired testing). Ordinary simulation metrics written to {}.",
                     config.experiment(), config.seeds().size(), StatisticalAnalyzer.MIN_PAIRED_SEEDS_FOR_INFERENCE, csvFilename);
             } else {
-                StatisticalAnalyzer analyzer = new StatisticalAnalyzer();
+                StatisticalAnalyzer analyzer = StatisticalAnalyzer.forExperiment(config.experiment());
                 List<StatisticalComparison> comparisons = analyzer.analyze(allRows);
 
                 if (!comparisons.isEmpty()) {

@@ -1,0 +1,53 @@
+# E2 Experiment Configuration: Component Ablation Study per docs/EVALUATION_PROTOCOL.md Section 5
+experiment: E2
+
+systems:
+  - S6
+  - S6_NO_PROXIMITY
+  - S6_NO_RARITY
+  - S6_NO_FRESHNESS
+  - S6_SINGLE_URGENCY
+  - S7
+  - S7_NO_RESPONSIVENESS
+
+responseModels:
+  - M1
+  - M2
+  - M3
+
+# Pre-registered reporting seeds (1-30) per docs/EVALUATION_PROTOCOL.md Section 6
+seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+
+outputDir: results/e2-final
+parallelism: 4
+
