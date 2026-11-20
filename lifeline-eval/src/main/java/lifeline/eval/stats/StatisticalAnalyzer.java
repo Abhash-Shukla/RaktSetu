@@ -55,23 +55,96 @@ public final class StatisticalAnalyzer {
     public static final int MIN_PAIRED_SEEDS_FOR_INFERENCE = 6;
     public static final int REQUIRED_REPORTING_SEEDS = 30;
 
-    private static final List<String> DEFAULT_CANDIDATES = List.of("S6", "S7");
-    private static final List<String> DEFAULT_BASELINES = List.of("S0", "S2", "S3", "S4", "S5");
+    public static final List<String> DEFAULT_CANDIDATES = List.of("S6", "S7");
+    public static final List<String> DEFAULT_BASELINES = List.of("S0", "S2", "S3", "S4", "S5");
+
+    public static final Map<String, List<String>> E2_MAPPINGS = Map.of(
+        "S6", List.of("S6_NO_PROXIMITY", "S6_NO_RARITY", "S6_NO_FRESHNESS", "S6_SINGLE_URGENCY"),
+        "S7", List.of("S7_NO_RESPONSIVENESS")
+    );
+
+    public static final Map<String, List<String>> E3_MAPPINGS = Map.of(
+        "S6", List.of("S6_NO_RARITY")
+    );
+
+    public static final Map<String, List<String>> E4_MAPPINGS = Map.of(
+        "S6_TIER0_ON", List.of("S6_TIER0_OFF")
+    );
+
+    public static final Map<String, List<String>> E5_MAPPINGS = Map.of(
+        "S6_FALLBACK_ON", List.of("S6_FALLBACK_OFF")
+    );
+
+    public static final Map<String, List<String>> E6_MAPPINGS = Map.of(
+        "S6_DEFAULT", List.of("S6_PERTURBED_BEST", "S6_PERTURBED_MIN", "S6_SINGLE_URGENCY")
+    );
 
     private final double alpha;
     private final long bootstrapSeed;
     private final List<String> candidateSystems;
     private final List<String> baselineSystems;
+    private final Map<String, List<String>> candidateToBaselines;
+
+    public StatisticalAnalyzer(double alpha, long bootstrapSeed, Map<String, List<String>> candidateToBaselines) {
+        this.alpha = alpha > 0.0 && alpha < 1.0 ? alpha : DEFAULT_ALPHA;
+        this.bootstrapSeed = bootstrapSeed;
+        Objects.requireNonNull(candidateToBaselines, "candidateToBaselines cannot be null");
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> e : candidateToBaselines.entrySet()) {
+            copy.put(e.getKey(), List.copyOf(e.getValue()));
+        }
+        this.candidateToBaselines = Collections.unmodifiableMap(copy);
+        this.candidateSystems = List.copyOf(copy.keySet());
+        Set<String> allBases = new LinkedHashSet<>();
+        copy.values().forEach(allBases::addAll);
+        this.baselineSystems = List.copyOf(allBases);
+    }
 
     public StatisticalAnalyzer(double alpha, long bootstrapSeed, List<String> candidates, List<String> baselines) {
         this.alpha = alpha > 0.0 && alpha < 1.0 ? alpha : DEFAULT_ALPHA;
         this.bootstrapSeed = bootstrapSeed;
         this.candidateSystems = candidates != null && !candidates.isEmpty() ? List.copyOf(candidates) : DEFAULT_CANDIDATES;
         this.baselineSystems = baselines != null && !baselines.isEmpty() ? List.copyOf(baselines) : DEFAULT_BASELINES;
+        Map<String, List<String>> map = new LinkedHashMap<>();
+        for (String c : this.candidateSystems) {
+            map.put(c, this.baselineSystems);
+        }
+        this.candidateToBaselines = Collections.unmodifiableMap(map);
     }
 
     public StatisticalAnalyzer() {
         this(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, DEFAULT_CANDIDATES, DEFAULT_BASELINES);
+    }
+
+    public static StatisticalAnalyzer forExperiment(String experiment) {
+        if ("E2".equalsIgnoreCase(experiment)) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E2_MAPPINGS);
+        }
+        if (experiment != null && (experiment.equalsIgnoreCase("E3") || experiment.toUpperCase().startsWith("E3_") || experiment.toUpperCase().startsWith("E3-"))) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E3_MAPPINGS);
+        }
+        if (experiment != null && (experiment.equalsIgnoreCase("E4") || experiment.toUpperCase().startsWith("E4_") || experiment.toUpperCase().startsWith("E4-"))) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E4_MAPPINGS);
+        }
+        if (experiment != null && (experiment.equalsIgnoreCase("E5") || experiment.toUpperCase().startsWith("E5_") || experiment.toUpperCase().startsWith("E5-"))) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E5_MAPPINGS);
+        }
+        if (experiment != null && (experiment.equalsIgnoreCase("E6") || experiment.toUpperCase().startsWith("E6_") || experiment.toUpperCase().startsWith("E6-"))) {
+            return new StatisticalAnalyzer(DEFAULT_ALPHA, DEFAULT_BOOTSTRAP_SEED, E6_MAPPINGS);
+        }
+        return new StatisticalAnalyzer();
+    }
+
+    public List<String> candidateSystems() {
+        return candidateSystems;
+    }
+
+    public List<String> baselineSystems() {
+        return baselineSystems;
+    }
+
+    public Map<String, List<String>> candidateToBaselines() {
+        return candidateToBaselines;
     }
 
     /**
@@ -172,7 +245,10 @@ public final class StatisticalAnalyzer {
                 MetricDirection direction = MetricDirection.forMetric(metric);
                 Map<String, Map<Long, Double>> systemMap = metricEntry.getValue();
 
-                for (String candidate : candidateSystems) {
+                for (Map.Entry<String, List<String>> entry : candidateToBaselines.entrySet()) {
+                    String candidate = entry.getKey();
+                    List<String> baselines = entry.getValue();
+
                     Map<Long, Double> candSeedMap = systemMap.get(candidate);
                     if (candSeedMap == null || candSeedMap.isEmpty()) {
                         continue;
@@ -181,7 +257,7 @@ public final class StatisticalAnalyzer {
                     // Pre-comparison container for a candidate's baseline family
                     List<IntermediateComparison> family = new ArrayList<>();
 
-                    for (String baseline : baselineSystems) {
+                    for (String baseline : baselines) {
                         if (candidate.equals(baseline)) {
                             continue;
                         }
@@ -466,6 +542,79 @@ public final class StatisticalAnalyzer {
             }
         }
         return rows;
+    }
+
+    public static StatisticalComparison comparePairedDerivedMetric(
+        String experiment,
+        EvaluationDatasetType datasetType,
+        String responseModel,
+        String candidateSystem,
+        String baselineSystem,
+        String metricName,
+        MetricDirection direction,
+        double[] derivedValues,
+        double alpha,
+        long bootstrapSeed
+    ) {
+        int n = derivedValues.length;
+        double[] zeros = new double[n];
+        int wins = 0;
+        int losses = 0;
+        int ties = 0;
+
+        for (double v : derivedValues) {
+            if (Double.compare(v, 0.0) == 0 || Math.abs(v) < 1e-12) {
+                ties++;
+            } else if (direction == MetricDirection.HIGHER_IS_BETTER) {
+                if (v > 0.0) wins++;
+                else losses++;
+            } else {
+                if (v < 0.0) wins++;
+                else losses++;
+            }
+        }
+
+        double candMean = BootstrapConfidenceInterval.computeMean(derivedValues);
+        double candMedian = BootstrapConfidenceInterval.computeMedian(derivedValues);
+
+        if (n < MIN_PAIRED_SEEDS_FOR_INFERENCE) {
+            return new StatisticalComparison(
+                experiment, datasetType, responseModel, candidateSystem, baselineSystem,
+                metricName, direction, n,
+                candMean, Double.NaN, Double.NaN, candMedian,
+                0.0, Double.NaN, Double.NaN, 0.0,
+                Double.NaN, Double.NaN, EffectSizeCalculator.Magnitude.NEGLIGIBLE,
+                Double.NaN, Double.NaN, Double.NaN,
+                wins, losses, ties, ComparisonDecision.INSUFFICIENT_DATA
+            );
+        }
+
+        ConfidenceInterval candCi = BootstrapConfidenceInterval.bootstrapMean(derivedValues, bootstrapSeed);
+        WilcoxonResult wilcoxon = WilcoxonSignedRankTest.test(derivedValues, zeros);
+        double hlShift = EffectSizeCalculator.hodgesLehmannShift(derivedValues, zeros);
+        EffectSizeCalculator.CliffsDeltaResult cdResult = EffectSizeCalculator.cliffsDelta(derivedValues, zeros);
+
+        boolean nonNegligible = cdResult.magnitude() != EffectSizeCalculator.Magnitude.NEGLIGIBLE
+            || Math.abs(hlShift) > 1e-6;
+
+        ComparisonDecision decision;
+        if (wilcoxon.pValue() < alpha && nonNegligible) {
+            boolean favorsCandidate = (direction == MetricDirection.HIGHER_IS_BETTER && hlShift > 0)
+                || (direction == MetricDirection.LOWER_IS_BETTER && hlShift < 0);
+            decision = favorsCandidate ? ComparisonDecision.IMPROVEMENT : ComparisonDecision.DEGRADATION;
+        } else {
+            decision = ComparisonDecision.NO_MEANINGFUL_DIFFERENCE;
+        }
+
+        return new StatisticalComparison(
+            experiment, datasetType, responseModel, candidateSystem, baselineSystem,
+            metricName, direction, n,
+            candCi.estimate(), candCi.lower(), candCi.upper(), candMedian,
+            0.0, 0.0, 0.0, 0.0,
+            hlShift, cdResult.delta(), cdResult.magnitude(),
+            wilcoxon.statistic(), wilcoxon.pValue(), wilcoxon.pValue(),
+            wins, losses, ties, decision
+        );
     }
 
     private record IntermediateComparison(

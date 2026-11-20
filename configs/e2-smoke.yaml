@@ -1,0 +1,27 @@
+# E2 Smoke Configuration: Tuning seeds 1001-1005 for verification testing only
+experiment: E2
+
+systems:
+  - S6
+  - S6_NO_PROXIMITY
+  - S6_NO_RARITY
+  - S6_NO_FRESHNESS
+  - S6_SINGLE_URGENCY
+  - S7
+  - S7_NO_RESPONSIVENESS
+
+responseModels:
+  - M1
+  - M2
+  - M3
+
+seeds:
+  - 1001
+  - 1002
+  - 1003
+  - 1004
+  - 1005
+
+outputDir: results/e2-tuning-smoke
+parallelism: 4
+

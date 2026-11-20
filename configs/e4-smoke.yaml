@@ -1,0 +1,17 @@
+experiment: E4
+inventory_levels:
+  - 0.0
+  - 0.25
+  - 0.50
+  - 1.00
+systems:
+  - S6_TIER0_ON
+  - S6_TIER0_OFF
+response_models:
+  - M1
+seeds:
+  - 1
+output_dir: results/e4-smoke
+parallelism: 4
+tier0_radius_km: 25.0
+

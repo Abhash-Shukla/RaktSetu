@@ -168,7 +168,7 @@ public final class ExperimentRunner {
                 log.info("Experiment {} executed with {} seed(s). Inferential statistical analysis skipped (minimum {} required for paired testing). Ordinary simulation metrics written to {}.",
                     config.experiment(), config.seeds().size(), StatisticalAnalyzer.MIN_PAIRED_SEEDS_FOR_INFERENCE, csvFilename);
             } else {
-                StatisticalAnalyzer analyzer = new StatisticalAnalyzer();
+                StatisticalAnalyzer analyzer = StatisticalAnalyzer.forExperiment(config.experiment());
                 List<StatisticalComparison> comparisons = analyzer.analyze(allRows);
 
                 if (!comparisons.isEmpty()) {
@@ -239,6 +239,23 @@ public final class ExperimentRunner {
         World world,
         List<BloodRequest> requests
     ) {
+        return executeSingleSimulation(experiment, system, modelName, seed, world, requests, false, 25.0);
+    }
+
+    /**
+     * Executes a single simulation run using a pre-generated immutable World and request set,
+     * with configurable Tier-0 inventory resolution.
+     */
+    public List<TidyMetricRow> executeSingleSimulation(
+        String experiment,
+        String system,
+        String modelName,
+        long seed,
+        World world,
+        List<BloodRequest> requests,
+        boolean tier0Enabled,
+        double tier0RadiusKm
+    ) {
         ResponseModel responseModel = createResponseModel(modelName, simParams);
         Oracle oracle = new SimulatedOracle(world.latentDonors(), responseModel);
         Matcher matcher = BaselineMatcherFactory.create(
@@ -250,7 +267,16 @@ public final class ExperimentRunner {
         );
 
         SimulationRun runner = new SimulationRun();
-        SimulationResult result = runner.run(world, matcher, responseModel, requests, seed);
+        SimulationResult result = runner.run(
+            world,
+            matcher,
+            responseModel,
+            requests,
+            seed,
+            tier0Enabled,
+            tier0RadiusKm,
+            populationFrequencies
+        );
 
         EvaluationMetrics metrics = MetricCalculator.calculate(result, requests, world, oracle);
         return metrics.toTidyRows(experiment, system, modelName, seed);
@@ -371,7 +397,7 @@ public final class ExperimentRunner {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<BloodGroup, Double> loadPopulationFrequencies() {
+    public static Map<BloodGroup, Double> loadPopulationFrequencies() {
         try (InputStream in = ExperimentRunner.class.getResourceAsStream("/sim/population.yaml")) {
             if (in == null) {
                 throw new IllegalStateException("Resource /sim/population.yaml not found");

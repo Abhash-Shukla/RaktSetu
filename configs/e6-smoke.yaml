@@ -1,0 +1,11 @@
+experiment: "E6"
+candidate_count: 2
+master_sampling_seed: 20261117
+response_models:
+  - "M1"
+tuning_seeds:
+  - 1001
+reporting_seeds:
+  - 1
+output_dir: "results/e6-smoke"
+parallelism: 4

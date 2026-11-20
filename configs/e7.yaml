@@ -1,0 +1,13 @@
+# E7 Experiment Configuration: Explanation Faithfulness Evaluation (Claim C5)
+experiment: E7
+seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+tolerance: 1.0e-12
+outputDir: results/e7-final
+topN: 10
+includeTargetedCoverageCases: true
+

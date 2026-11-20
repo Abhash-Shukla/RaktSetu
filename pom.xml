@@ -29,6 +29,7 @@
 
         <!-- Dependency Versions -->
         <spring-boot.version>3.4.1</spring-boot.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <junit.version>5.11.4</junit.version>
         <assertj.version>3.27.3</assertj.version>
         <jqwik.version>1.9.2</jqwik.version>
@@ -41,6 +42,15 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Testcontainers BOM (pinned to 1.21.4 for Docker Engine 29 compatibility) -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Spring Boot BOM (for api module, NEVER core) -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

@@ -65,18 +65,30 @@ public final class MetricCalculator {
 
         int rareDonorAllocations = 0;
         int rareDonorWastedAllocations = 0;
+        Set<String> tier0ResolvedRequests = new HashSet<>();
+        int fallbackAttemptsCount = 0;
+        Set<String> fallbackResolvedRequests = new HashSet<>();
 
         for (SimulationEvent event : result.eventLog()) {
             String reqId = event.requestId();
 
-            if (event.type() == SimulationEventType.DONOR_NOTIFIED && event.donorId() != null) {
+            if (event.type() == SimulationEventType.REQUEST_RESOLVED_TIER0) {
+                tier0ResolvedRequests.add(reqId);
+            } else if (event.type() == SimulationEventType.DONOR_NOTIFIED && event.donorId() != null) {
                 donorContacts.merge(event.donorId(), 1, Integer::sum);
+
+                if (event.attemptNumber() > 1) {
+                    fallbackAttemptsCount++;
+                }
 
                 if (event.attemptNumber() == 1 && !firstContactedDonor.containsKey(reqId)) {
                     firstContactedDonor.put(reqId, event.donorId());
                     firstContactTime.put(reqId, event.timestamp());
                 }
             } else if (event.type() == SimulationEventType.DONOR_ACCEPTED && event.donorId() != null) {
+                if (event.attemptNumber() > 1) {
+                    fallbackResolvedRequests.add(reqId);
+                }
                 LatentDonor donor = donorMap.get(event.donorId());
                 BloodRequest req = requestMap.get(reqId);
                 if (donor != null && req != null) {
@@ -132,13 +144,37 @@ public final class MetricCalculator {
             groupUnfulfilled.put(bg, 0);
         }
 
+        int rareRequestsCount = 0;
+        int rareRequestsFulfilled = 0;
+        int commonRequestsCount = 0;
+        int commonRequestsFulfilled = 0;
+
         for (BloodRequest req : requests) {
             BloodGroup bg = req.bloodGroup();
             groupTotal.merge(bg, 1, Integer::sum);
-            if (!fulfilledRequests.contains(req.id())) {
+            boolean fulfilled = fulfilledRequests.contains(req.id());
+            if (!fulfilled) {
                 groupUnfulfilled.merge(bg, 1, Integer::sum);
             }
+            if (isRareGroup(bg)) {
+                rareRequestsCount++;
+                if (fulfilled) {
+                    rareRequestsFulfilled++;
+                }
+            } else {
+                commonRequestsCount++;
+                if (fulfilled) {
+                    commonRequestsFulfilled++;
+                }
+            }
         }
+
+        double rareRequestFulfillment = rareRequestsCount == 0
+            ? 0.0
+            : (double) rareRequestsFulfilled / rareRequestsCount;
+        double commonRequestFulfillment = commonRequestsCount == 0
+            ? 0.0
+            : (double) commonRequestsFulfilled / commonRequestsCount;
 
         Map<BloodGroup, Double> unfulfilledRateByGroup = new EnumMap<>(BloodGroup.class);
         for (BloodGroup bg : BloodGroup.values()) {
@@ -224,6 +260,9 @@ public final class MetricCalculator {
         double meanRegret = evaluatedRequestsCount == 0 ? 0.0 : totalRegret / evaluatedRequestsCount;
         double meanNdcgGap = evaluatedRequestsCount == 0 ? 0.0 : totalNdcgGap / evaluatedRequestsCount;
 
+        double tier0ResolvedShare = totalRequestsCount == 0 ? 0.0 : (double) tier0ResolvedRequests.size() / totalRequestsCount;
+        int totalNotifications = result.totalNotificationsSent();
+
         return new EvaluationMetrics(
             fulfillmentWithinDeadline,
             contactsPerFulfilled,
@@ -235,7 +274,13 @@ public final class MetricCalculator {
             gini,
             maxContacts,
             meanRegret,
-            meanNdcgGap
+            meanNdcgGap,
+            rareRequestFulfillment,
+            commonRequestFulfillment,
+            tier0ResolvedShare,
+            totalNotifications,
+            fallbackAttemptsCount,
+            fallbackResolvedRequests.size()
         );
     }
 

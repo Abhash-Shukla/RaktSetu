@@ -1,0 +1,13 @@
+experiment: "E5"
+attempt_budgets:
+  - 1
+  - 10
+systems:
+  - "S6_FALLBACK_ON"
+  - "S6_FALLBACK_OFF"
+response_models:
+  - "M1"
+seeds:
+  - 1001
+output_dir: "results/e5-smoke"
+parallelism: 4

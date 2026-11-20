@@ -1,0 +1,71 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Experiment E5: Fallback Re-ranking and Attempt-Budget Sweep (Claim C4)}
+\label{tab:e5_fallback}
+\begin{tabular}{lllcccccl}
+\toprule
+Budget & Model & Metric & Fallback ON & Fallback OFF & HL Shift & Cliff's $d$ & Holm $p$ & Decision \\
+\midrule
+\multicolumn{9}{l}{\textbf{Budget 1}} \\
+\midrule
+Budget 1 & M1 & contacts per fulfilled request & 18.8 & 18.8 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M1 & fallback resolved count & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M1 & fulfillment within deadline & 0.055 & 0.055 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M2 & contacts per fulfilled request & 28.0 & 28.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M2 & fallback resolved count & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M2 & fulfillment within deadline & 0.037 & 0.037 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M3 & contacts per fulfilled request & 18.2 & 18.2 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M3 & fallback resolved count & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+Budget 1 & M3 & fulfillment within deadline & 0.056 & 0.056 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+\midrule
+\multicolumn{9}{l}{\textbf{Budget 5}} \\
+\midrule
+Budget 5 & M1 & contacts per fulfilled request & 15.4 & 18.8 & -3.6 & -0.72 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M1 & fallback resolved count & 288.7 & 0.0 & +288.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M1 & fulfillment within deadline & 0.290 & 0.055 & +0.237 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M2 & contacts per fulfilled request & 24.9 & 28.0 & -3.0 & -0.42 & 0.0040 & IMPROVEMENT \\
+Budget 5 & M2 & fallback resolved count & 211.3 & 0.0 & +212.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M2 & fulfillment within deadline & 0.188 & 0.037 & +0.151 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M3 & contacts per fulfilled request & 14.8 & 18.2 & -3.4 & -0.70 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M3 & fallback resolved count & 297.3 & 0.0 & +297.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 5 & M3 & fulfillment within deadline & 0.300 & 0.056 & +0.245 & +1.00 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Budget 10}} \\
+\midrule
+Budget 10 & M1 & contacts per fulfilled request & 13.9 & 18.8 & -4.8 & -0.98 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M1 & fallback resolved count & 425.7 & 0.0 & +426.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M1 & fulfillment within deadline & 0.514 & 0.055 & +0.460 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M2 & contacts per fulfilled request & 22.2 & 28.0 & -5.7 & -0.75 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M2 & fallback resolved count & 348.3 & 0.0 & +348.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M2 & fulfillment within deadline & 0.358 & 0.037 & +0.321 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M3 & contacts per fulfilled request & 13.4 & 18.2 & -4.7 & -0.94 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M3 & fallback resolved count & 432.9 & 0.0 & +432.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 10 & M3 & fulfillment within deadline & 0.528 & 0.056 & +0.473 & +1.00 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Budget 15}} \\
+\midrule
+Budget 15 & M1 & contacts per fulfilled request & 13.4 & 18.8 & -5.3 & -0.99 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M1 & fallback resolved count & 453.7 & 0.0 & +452.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M1 & fulfillment within deadline & 0.609 & 0.055 & +0.555 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M2 & contacts per fulfilled request & 20.7 & 28.0 & -7.2 & -0.89 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M2 & fallback resolved count & 394.7 & 0.0 & +394.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M2 & fulfillment within deadline & 0.462 & 0.037 & +0.428 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M3 & contacts per fulfilled request & 12.8 & 18.2 & -5.3 & -1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M3 & fallback resolved count & 460.2 & 0.0 & +460.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 15 & M3 & fulfillment within deadline & 0.626 & 0.056 & +0.569 & +1.00 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Budget 20}} \\
+\midrule
+Budget 20 & M1 & contacts per fulfilled request & 13.0 & 18.8 & -5.7 & -1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M1 & fallback resolved count & 461.0 & 0.0 & +460.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M1 & fulfillment within deadline & 0.646 & 0.055 & +0.591 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M2 & contacts per fulfilled request & 19.8 & 28.0 & -8.2 & -0.94 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M2 & fallback resolved count & 408.7 & 0.0 & +408.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M2 & fulfillment within deadline & 0.511 & 0.037 & +0.476 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M3 & contacts per fulfilled request & 12.5 & 18.2 & -5.6 & -1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M3 & fallback resolved count & 462.5 & 0.0 & +461.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+Budget 20 & M3 & fulfillment within deadline & 0.661 & 0.056 & +0.605 & +1.00 & < 0.001 & IMPROVEMENT \\
+\bottomrule
+\end{tabular}
+\end{table*}

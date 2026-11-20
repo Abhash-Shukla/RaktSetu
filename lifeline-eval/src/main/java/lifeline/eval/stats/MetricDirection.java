@@ -15,7 +15,12 @@ public enum MetricDirection {
             return HIGHER_IS_BETTER;
         }
         String m = metricName.toLowerCase().trim();
-        if (m.equals("fulfillment_within_deadline")) {
+        if (m.equals("fulfillment_within_deadline")
+            || m.equals("rare_request_fulfillment")
+            || m.equals("common_request_fulfillment")
+            || m.equals("tier0_resolved_share")
+            || m.equals("donor_contacts_avoided")
+            || m.equals("fallback_resolved_count")) {
             return HIGHER_IS_BETTER;
         }
         // All others in protocol are costs/errors/waste/load where lower is preferred:
