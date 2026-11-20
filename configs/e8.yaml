@@ -1,0 +1,18 @@
+# E8 Experiment Configuration: Engine Scalability and Latency Benchmark (Claim C7)
+experiment: E8
+donorPoolSizes:
+  - 1000
+  - 5000
+  - 20000
+  - 50000
+concurrencyLevels:
+  - 1
+  - 10
+  - 50
+  - 100
+warmupIterations: 20
+measuredIterations: 100
+topN: 10
+seed: 1001
+outputDir: results/e8-final
+

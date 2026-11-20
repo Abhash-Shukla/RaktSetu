@@ -1,0 +1,1235 @@
+openapi: 3.0.3
+info:
+  title: LifeLine (RaktSetu) REST API
+  description: |
+    Explainable blood donor-recipient matching platform API.
+    Provides secure endpoints for public blood requirement intake, bank staff workflow,
+    explainable greedy Top-N matching, Tier-0 inventory routing, donor profile management,
+    and administrative configuration versioning.
+    
+    > **CLINICAL CAVEAT:** The LifeLine system routes and ranks blood donor and inventory
+    > candidates based on algorithmic optimization criteria only. Final clinical eligibility,
+    > blood typing confirmation, infectious disease screening, cross-matching, and collection
+    > decisions remain the sole responsibility of licensed blood bank staff and medical professionals.
+  version: 0.1.0-SNAPSHOT
+  contact:
+    name: LifeLine / RaktSetu Platform Team
+servers:
+  - url: http://localhost:8080
+    description: Local development environment
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Provide the JWT token returned from `/api/v1/auth/login` or `/api/v1/auth/register-donor`.
+        Format: `Bearer <token>`
+
+  schemas:
+    AuthRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: staff_central
+        password:
+          type: string
+          example: password123
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        username:
+          type: string
+          example: staff_central
+        email:
+          type: string
+          example: staff1@lifeline.test
+        role:
+          type: string
+          enum: [DONOR, BANK_STAFF, ADMIN]
+          example: BANK_STAFF
+
+    RegisterDonorRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+        - bloodGroup
+        - sex
+        - homeZone
+      properties:
+        username:
+          type: string
+          example: donor_arjun
+        email:
+          type: string
+          example: arjun@lifeline.test
+        password:
+          type: string
+          example: SecurePass123!
+        bloodGroup:
+          type: string
+          enum: [A_POS, A_NEG, B_POS, B_NEG, AB_POS, AB_NEG, O_POS, O_NEG]
+          example: O_POS
+        sex:
+          type: string
+          enum: [MALE, FEMALE]
+          description: Used exclusively to determine statutory cooldown window (90 days male, 120 days female).
+          example: MALE
+        homeZone:
+          type: string
+          example: Z1
+
+    ParseTextRequestDto:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          maxLength: 5000
+          example: "Urgent need for 2 units of B+ blood at AIIMS 110029. Contact 9876543210."
+
+    PublicFreeTextIntakeDto:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          maxLength: 5000
+          example: "Urgent requirement: 2 bags of O+ blood needed at Safdarjung hospital."
+        contact:
+          type: string
+          maxLength: 100
+          example: "9876543210"
+
+    ParsedIntakeDto:
+      type: object
+      properties:
+        bloodGroup:
+          type: string
+          enum: [A_POS, A_NEG, B_POS, B_NEG, AB_POS, AB_NEG, O_POS, O_NEG]
+          example: B_POS
+        urgency:
+          type: string
+          enum: [CRITICAL, URGENT, ROUTINE]
+          example: URGENT
+        zone/pincode:
+          type: string
+          example: "110029"
+        units:
+          type: integer
+          example: 2
+        contact:
+          type: string
+          example: "9876543210"
+        confidence:
+          type: number
+          format: double
+          example: 0.92
+        unparsed_text:
+          type: string
+          example: "Urgent need for 2 units of B+ blood at AIIMS 110029. Contact 9876543210."
+        fieldConfidences:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+        flags:
+          type: array
+          items:
+            type: string
+          example: []
+        isValid:
+          type: boolean
+          example: true
+        fallbackRecommended:
+          type: boolean
+          example: false
+        fallbackReason:
+          type: string
+          nullable: true
+          example: null
+
+    CreateBloodRequestDto:
+      type: object
+      required:
+        - patientReference
+        - bloodGroup
+        - unitsRequested
+        - urgency
+        - zone
+      properties:
+        patientReference:
+          type: string
+          example: PAT-2026-001
+        bloodGroup:
+          type: string
+          enum: [A_POS, A_NEG, B_POS, B_NEG, AB_POS, AB_NEG, O_POS, O_NEG]
+          example: O_POS
+        unitsRequested:
+          type: integer
+          minimum: 1
+          example: 2
+        urgency:
+          type: string
+          enum: [CRITICAL, URGENT, ROUTINE]
+          example: URGENT
+        zone:
+          type: string
+          example: Z1
+        deadlineHours:
+          type: integer
+          description: Optional override. Defaults to 2h for CRITICAL, 6h for URGENT, 24h for ROUTINE.
+          example: 6
+
+    ReviewRequestDto:
+      type: object
+      required:
+        - approve
+      properties:
+        approve:
+          type: boolean
+          example: true
+        rejectionReason:
+          type: string
+          example: "Unverified clinical documentation"
+        verifiedUrgency:
+          type: string
+          enum: [CRITICAL, URGENT, ROUTINE]
+          example: CRITICAL
+        verifiedUnits:
+          type: integer
+          example: 2
+        verifiedBloodGroup:
+          type: string
+          enum: [A_POS, A_NEG, B_POS, B_NEG, AB_POS, AB_NEG, O_POS, O_NEG]
+          example: B_POS
+        verifiedZone:
+          type: string
+          example: "110029"
+        verifiedPatientReference:
+          type: string
+          example: "PAT-EDITED-001"
+
+    BloodRequestResponseDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        patientReference:
+          type: string
+          example: PAT-2026-001
+        bloodGroup:
+          type: string
+          example: O_POS
+        unitsRequested:
+          type: integer
+          example: 2
+        unitsFulfilled:
+          type: integer
+          example: 0
+        urgency:
+          type: string
+          example: URGENT
+        zone:
+          type: string
+          example: Z1
+        status:
+          type: string
+          enum: [PENDING_REVIEW, OPEN, RESOLVED_TIER0, FULFILLED, EXHAUSTED, CANCELLED, REJECTED]
+          example: OPEN
+        source:
+          type: string
+          enum: [PUBLIC, STAFF, PARSED]
+          example: PARSED
+        deadline:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        contactNumber:
+          type: string
+          nullable: true
+          example: "9876543210"
+        unparsedText:
+          type: string
+          nullable: true
+          example: "Urgent need for 2 units of B+ blood at AIIMS 110029"
+        extractionConfidence:
+          type: number
+          format: double
+          nullable: true
+          example: 0.92
+
+    Tier0CheckDto:
+      type: object
+      properties:
+        resolved:
+          type: boolean
+          example: true
+        bankId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1
+        bankName:
+          type: string
+          nullable: true
+          example: "Central City Blood Bank"
+        bankZone:
+          type: string
+          nullable: true
+          example: "Z1"
+        unitsAvailable:
+          type: integer
+          example: 12
+        message:
+          type: string
+          example: "Tier-0 route: Found 12 compatible units at Central City Blood Bank (approx 0.0 km away)."
+
+    RankedMatchDto:
+      type: object
+      properties:
+        rankPosition:
+          type: integer
+          example: 1
+        donorId:
+          type: integer
+          format: int64
+          example: 4
+        bloodGroup:
+          type: string
+          example: O_POS
+        zone:
+          type: string
+          example: Z1
+        totalScore:
+          type: number
+          format: double
+          example: 0.95
+        plainLanguageExplanation:
+          type: string
+          example: "Top factor: PROXIMITY (contribution: +0.80). Close to recipient hospital (0.0 km). Exact ABO/Rh blood group match."
+        reasonCode:
+          type: string
+          example: PROXIMITY_DOMINANT
+        factorContributions:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+          example:
+            PROXIMITY: 0.80
+            RARITY: 0.15
+
+    NotificationResponseDto:
+      type: object
+      properties:
+        matchLogId:
+          type: integer
+          format: int64
+          example: 101
+        requestId:
+          type: integer
+          format: int64
+          example: 10
+        patientReference:
+          type: string
+          example: PAT-2026-001
+        bloodGroup:
+          type: string
+          example: O_POS
+        urgency:
+          type: string
+          example: URGENT
+        zone:
+          type: string
+          example: Z1
+        deadline:
+          type: string
+          format: date-time
+        outcome:
+          type: string
+          enum: [NOTIFIED, ACCEPTED, DECLINED, EXPIRED, CANCELLED]
+          example: NOTIFIED
+        notifiedAt:
+          type: string
+          format: date-time
+
+    DonorProfileDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        username:
+          type: string
+          example: donor_arjun
+        email:
+          type: string
+          example: arjun@lifeline.test
+        bloodGroup:
+          type: string
+          example: O_POS
+        sex:
+          type: string
+          example: MALE
+        homeZone:
+          type: string
+          example: Z1
+        lastDonationDate:
+          type: string
+          format: date
+          nullable: true
+          example: "2026-06-01"
+        isAvailable:
+          type: boolean
+          example: true
+        isPaused:
+          type: boolean
+          example: false
+        currentZone:
+          type: string
+          nullable: true
+          example: Z1
+        totalContacts:
+          type: integer
+          example: 3
+        totalAccepts:
+          type: integer
+          example: 2
+        totalDeclines:
+          type: integer
+          example: 1
+        totalNoResponses:
+          type: integer
+          example: 0
+
+    UpdateDonorProfileDto:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+          example: true
+        isPaused:
+          type: boolean
+          example: false
+        currentZone:
+          type: string
+          example: Z2
+
+    DonorDecisionDto:
+      type: object
+      required:
+        - accept
+      properties:
+        accept:
+          type: boolean
+          example: true
+
+    BankInventoryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        bankId:
+          type: integer
+          format: int64
+          example: 1
+        bankName:
+          type: string
+          example: "Central City Blood Bank"
+        bankZone:
+          type: string
+          example: "Z1"
+        bloodGroup:
+          type: string
+          example: "O_POS"
+        unitsAvailable:
+          type: integer
+          example: 12
+        updatedAt:
+          type: string
+          format: date-time
+
+    EngineConfigDto:
+      type: object
+      properties:
+        versionNumber:
+          type: integer
+          example: 1
+        description:
+          type: string
+          example: "Default locked-specification S6 matching parameters"
+        configJson:
+          type: string
+          example: '{"weights":{"CRITICAL":{"proximity":0.85,"rarity":0.15,"responsiveness":0.0}}}'
+        author:
+          type: string
+          example: admin
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+
+    UserSummaryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 2
+        username:
+          type: string
+          example: staff_central
+        email:
+          type: string
+          example: staff1@lifeline.test
+        role:
+          type: string
+          enum: [DONOR, BANK_STAFF, ADMIN]
+          example: BANK_STAFF
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, PENDING_VERIFICATION]
+          example: ACTIVE
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditLogDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 45
+        actorUsername:
+          type: string
+          example: staff_central
+        actorRole:
+          type: string
+          example: BANK_STAFF
+        action:
+          type: string
+          example: REQUEST_APPROVED
+        entityType:
+          type: string
+          example: BLOOD_REQUEST
+        entityId:
+          type: string
+          example: "10"
+        details:
+          type: string
+          example: "Request approved by staff; moved to OPEN"
+        ipAddress:
+          type: string
+          example: "127.0.0.1"
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid username or password
+
+  /api/v1/auth/register-donor:
+    post:
+      tags: [Authentication]
+      summary: Self-register as a voluntary blood donor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDonorRequest'
+      responses:
+        '200':
+          description: Donor registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Username or email already registered
+
+  /api/v1/public/requests:
+    post:
+      tags: [Public Intake]
+      summary: Submit a public blood requirement (rate-limited)
+      description: |
+        Families and hospitals can submit unauthenticated requests.
+        Strict requirement: Public intake requests strictly enter PENDING_REVIEW
+        and never trigger matching until reviewed by bank staff.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBloodRequestDto'
+      responses:
+        '201':
+          description: Request queued in PENDING_REVIEW
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+        '429':
+          description: Rate limit exceeded (sliding-window IP limit)
+
+  /api/v1/public/requests/parse-text:
+    post:
+      tags: [Public Intake, NLP Intake]
+      summary: Parse unstructured free text into candidate blood request schema
+      description: |
+        Extracts structured blood request attributes (bloodGroup, urgency, zone, units, contact, confidence)
+        from informal or mixed-language free text using the IntakeParser port (LLM adapter or deterministic fake).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseTextRequestDto'
+      responses:
+        '200':
+          description: Parsed and validated intake fields with confidence scores and validation flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsedIntakeDto'
+        '429':
+          description: Rate limit exceeded
+
+  /api/v1/public/requests/free-text:
+    post:
+      tags: [Public Intake, NLP Intake]
+      summary: Submit unstructured free-text request directly (rate-limited)
+      description: |
+        Parses free text and validates schema. On success, strictly creates request in PENDING_REVIEW status.
+        Never auto-approves or triggers matching. If parsing fails, returns 422 with recommendation to use manual form.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicFreeTextIntakeDto'
+      responses:
+        '201':
+          description: Parsed request created in PENDING_REVIEW
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+        '422':
+          description: Automated extraction failed or confidence below threshold. Use manual intake form.
+        '429':
+          description: Rate limit exceeded
+
+  /api/v1/public/requests/{id}/status:
+    get:
+      tags: [Public Intake]
+      summary: Track status of a submitted public request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Current request status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests:
+    get:
+      tags: [Blood Requests]
+      summary: List all blood requests (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of blood requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BloodRequestResponseDto'
+    post:
+      tags: [Blood Requests]
+      summary: Create staff-verified blood request directly in OPEN status (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBloodRequestDto'
+      responses:
+        '201':
+          description: Created OPEN request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests/parse-text:
+    post:
+      tags: [Blood Requests, NLP Intake]
+      summary: Parse forwarded message into structured request fields for staff review (BANK_STAFF, ADMIN)
+      description: |
+        Staff pastes forwarded WhatsApp/SMS request message. The system extracts structured fields
+        with confidence flags. Staff can inspect and edit all fields prior to submission.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseTextRequestDto'
+      responses:
+        '200':
+          description: Parsed candidate fields with confidence scores and validation flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsedIntakeDto'
+
+  /api/v1/requests/parsed:
+    post:
+      tags: [Blood Requests, NLP Intake]
+      summary: Submit a forwarded informal blood request (BANK_STAFF, ADMIN)
+      description: |
+        Submits parsed request. HARD RULE: All parsed requests strictly enter PENDING_REVIEW;
+        staff must explicitly review and approve them before they transition to OPEN.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseTextRequestDto'
+      responses:
+        '201':
+          description: Parsed request created in PENDING_REVIEW
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests/{id}:
+    get:
+      tags: [Blood Requests]
+      summary: Get blood request details by ID (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests/queue/pending-review:
+    get:
+      tags: [Blood Requests]
+      summary: Get queue of requests awaiting staff review (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests/{id}/review:
+    post:
+      tags: [Blood Requests]
+      summary: Review public intake request - approve to OPEN or reject (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequestDto'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+
+  /api/v1/requests/{id}/tier0-check:
+    get:
+      tags: [Blood Requests]
+      summary: Evaluate Tier-0 hospital/bank inventory stock within 25 km (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tier0CheckDto'
+
+  /api/v1/requests/{id}/tier0-fulfill/{bankId}:
+    post:
+      tags: [Blood Requests]
+      summary: Fulfill blood request from nearby bank stock with optimistic locking (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: bankId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BloodRequestResponseDto'
+        '409':
+          description: Concurrent inventory modification conflict
+
+  /api/v1/requests/{id}/matches:
+    get:
+      tags: [Blood Requests]
+      summary: Get greedy Top-N explainable donor matches (BANK_STAFF, ADMIN)
+      description: |
+        Runs greedy Top-N multi-factor scoring against eligible donors.
+        Applies hard filters (ABO/Rh compatibility, statutory cooldown: 90d male / 120d female, availability).
+        Proximity is a ranking factor, not a hard exclusion.
+        Returns factor breakdowns and plain-language explanation templates.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: topN
+          in: query
+          schema:
+            type: integer
+            default: 5
+        - name: s7
+          in: query
+          description: Optional toggle to activate responsiveness factor (S7 extension). Default is false (locked S6 baseline).
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RankedMatchDto'
+
+  /api/v1/requests/{id}/notify-donor/{donorId}:
+    post:
+      tags: [Blood Requests]
+      summary: Notify a candidate donor from the ranked list (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: donorId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponseDto'
+
+  /api/v1/requests/match-logs/{matchLogId}/record-response:
+    post:
+      tags: [Blood Requests]
+      summary: Record donor response via staff workflow (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: matchLogId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: outcome
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ACCEPTED, DECLINED, EXPIRED, CANCELLED]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponseDto'
+
+  /api/v1/donor/profile:
+    get:
+      tags: [Donors]
+      summary: Get profile of authenticated donor (DONOR)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonorProfileDto'
+    put:
+      tags: [Donors]
+      summary: Update donor availability, paused state, or current location (DONOR)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDonorProfileDto'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonorProfileDto'
+
+  /api/v1/donor/notifications:
+    get:
+      tags: [Donors]
+      summary: List notifications for authenticated donor (DONOR)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponseDto'
+
+  /api/v1/donor/notifications/{matchLogId}/respond:
+    post:
+      tags: [Donors]
+      summary: Accept or decline a donation notification (DONOR)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: matchLogId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonorDecisionDto'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponseDto'
+        '403':
+          description: Match log does not belong to authenticated donor
+
+  /api/v1/inventory:
+    get:
+      tags: [Inventory]
+      summary: List all bank inventories (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankInventoryDto'
+
+  /api/v1/inventory/banks/{bankId}:
+    get:
+      tags: [Inventory]
+      summary: Get inventory for specific blood bank (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bankId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankInventoryDto'
+    put:
+      tags: [Inventory]
+      summary: Update available blood units with optimistic locking (BANK_STAFF, ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bankId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: bloodGroup
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: units
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankInventoryDto'
+        '409':
+          description: Concurrent inventory update conflict
+
+  /api/v1/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users (ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummaryDto'
+
+  /api/v1/admin/users/{id}/status:
+    patch:
+      tags: [Admin]
+      summary: Update user status (ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [ACTIVE, SUSPENDED, PENDING_VERIFICATION]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummaryDto'
+
+  /api/v1/admin/users/{id}/role:
+    patch:
+      tags: [Admin]
+      summary: Update user role (ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: role
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [DONOR, BANK_STAFF, ADMIN]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSummaryDto'
+
+  /api/v1/admin/config:
+    get:
+      tags: [Admin]
+      summary: List all engine configuration versions (ADMIN)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EngineConfigDto'
+    post:
+      tags: [Admin]
+      summary: Create and activate a new immutable engine configuration version (ADMIN)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EngineConfigDto'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngineConfigDto'
+
+  /api/v1/admin/config/active:
+    get:
+      tags: [Admin]
+      summary: Get active engine configuration version (ADMIN, BANK_STAFF)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EngineConfigDto'
+
+  /api/v1/admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Retrieve immutable system audit log entries (ADMIN)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogDto'

@@ -1,0 +1,50 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Experiment E2: Leave-One-Component-Out Ablation Study (Claim C2)}
+\label{tab:e2_ablation}
+\begin{tabular}{lllcccccl}
+\toprule
+Model & Full Engine & Ablated Variant & Metric & Full Mean & Ablated Mean & HL Shift & Holm $p$ & Decision \\
+\midrule
+\multicolumn{9}{l}{\textbf{Response Model M1}} \\
+\midrule
+M1 & S6 & NO PROXIMITY & contacts per fulfilled request & 13.9 & 84.4 & -70.1 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & NO RARITY & contacts per fulfilled request & 13.9 & 15.0 & -1.1 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & NO FRESHNESS & contacts per fulfilled request & 13.9 & 15.8 & -2.0 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & SINGLE URGENCY & contacts per fulfilled request & 13.9 & 13.8 & +0.0 & 0.9018 & NO MEANINGFUL DIFFERENCE \\
+M1 & S7 & NO RESPONSIVENESS & contacts per fulfilled request & 8.2 & 13.9 & -5.6 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & NO PROXIMITY & fulfillment within deadline & 0.514 & 0.110 & +0.405 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & NO RARITY & fulfillment within deadline & 0.514 & 0.487 & +0.026 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & NO FRESHNESS & fulfillment within deadline & 0.514 & 0.466 & +0.049 & < 0.001 & IMPROVEMENT \\
+M1 & S6 & SINGLE URGENCY & fulfillment within deadline & 0.514 & 0.514 & -0.000 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+M1 & S7 & NO RESPONSIVENESS & fulfillment within deadline & 0.694 & 0.514 & +0.180 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Response Model M2}} \\
+\midrule
+M2 & S6 & NO PROXIMITY & contacts per fulfilled request & 22.2 & 972.0 & -876.2 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & NO RARITY & contacts per fulfilled request & 22.2 & 29.1 & -6.9 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & NO FRESHNESS & contacts per fulfilled request & 22.2 & 25.3 & -3.1 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & SINGLE URGENCY & contacts per fulfilled request & 22.2 & 22.3 & -0.1 & 0.5306 & NO MEANINGFUL DIFFERENCE \\
+M2 & S7 & NO RESPONSIVENESS & contacts per fulfilled request & 13.0 & 22.1 & -9.1 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & NO PROXIMITY & fulfillment within deadline & 0.358 & 0.011 & +0.346 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & NO RARITY & fulfillment within deadline & 0.358 & 0.289 & +0.070 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & NO FRESHNESS & fulfillment within deadline & 0.358 & 0.322 & +0.036 & < 0.001 & IMPROVEMENT \\
+M2 & S6 & SINGLE URGENCY & fulfillment within deadline & 0.358 & 0.357 & +0.001 & 0.7639 & NO MEANINGFUL DIFFERENCE \\
+M2 & S7 & NO RESPONSIVENESS & fulfillment within deadline & 0.534 & 0.360 & +0.174 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Response Model M3}} \\
+\midrule
+M3 & S6 & NO PROXIMITY & contacts per fulfilled request & 13.4 & 21.8 & -8.4 & < 0.001 & IMPROVEMENT \\
+M3 & S6 & NO RARITY & contacts per fulfilled request & 13.4 & 14.4 & -1.2 & < 0.001 & IMPROVEMENT \\
+M3 & S6 & NO FRESHNESS & contacts per fulfilled request & 13.4 & 13.4 & -0.0 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+M3 & S6 & SINGLE URGENCY & contacts per fulfilled request & 13.4 & 13.3 & +0.0 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+M3 & S7 & NO RESPONSIVENESS & contacts per fulfilled request & 8.1 & 13.4 & -5.3 & < 0.001 & IMPROVEMENT \\
+M3 & S6 & NO PROXIMITY & fulfillment within deadline & 0.528 & 0.374 & +0.154 & < 0.001 & IMPROVEMENT \\
+M3 & S6 & NO RARITY & fulfillment within deadline & 0.528 & 0.502 & +0.028 & < 0.001 & IMPROVEMENT \\
+M3 & S6 & NO FRESHNESS & fulfillment within deadline & 0.528 & 0.527 & +0.000 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+M3 & S6 & SINGLE URGENCY & fulfillment within deadline & 0.528 & 0.528 & -0.001 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+M3 & S7 & NO RESPONSIVENESS & fulfillment within deadline & 0.707 & 0.527 & +0.180 & < 0.001 & IMPROVEMENT \\
+\bottomrule
+\end{tabular}
+\end{table*}

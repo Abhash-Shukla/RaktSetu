@@ -1,0 +1,20 @@
+# E3 Smoke Test Configuration: Rapid sanity verification on tuning seed (not for research findings)
+experiment: E3
+
+scarcityMultipliers:
+  - 1.0
+  - 2.0
+
+systems:
+  - S6
+  - S6_NO_RARITY
+
+responseModels:
+  - M1
+
+# Single exploratory tuning seed
+seeds:
+  - 1001
+
+outputDir: results/e3-smoke
+

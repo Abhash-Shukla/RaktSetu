@@ -1,0 +1,7 @@
+{
+  "_comment": "Recorded LLM extraction responses corresponding to human-labeled messages for offline reproducible evaluation (E9 / Claim C6).",
+  "status": "TODO(human)",
+  "model": "gemini-1.5-flash",
+  "recorded_at": null,
+  "fixtures": []
+}

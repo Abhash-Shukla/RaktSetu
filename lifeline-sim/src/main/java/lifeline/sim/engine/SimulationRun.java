@@ -2,6 +2,10 @@ package lifeline.sim.engine;
 
 import lifeline.core.compatibility.CompatibilityTable;
 import lifeline.core.domain.*;
+import lifeline.core.inventory.BankInventory;
+import lifeline.core.inventory.Tier0InventoryChecker;
+import lifeline.core.inventory.Tier0Result;
+import lifeline.sim.inventory.InventoryDepletionManager;
 import lifeline.sim.model.LatentDonor;
 import lifeline.sim.model.SimulationParameters;
 import lifeline.sim.request.RequestGenerator;
@@ -79,6 +83,32 @@ public final class SimulationRun {
         List<BloodRequest> requests,
         long seed
     ) {
+        return run(world, matcher, responseModel, requests, seed, false, Tier0InventoryChecker.DEFAULT_RADIUS_KM, Collections.emptyMap());
+    }
+
+    /**
+     * Executes a discrete-event simulation run with optional Tier-0 inventory resolution.
+     *
+     * @param world                 synthetic simulation world
+     * @param matcher               candidate selection strategy under evaluation
+     * @param responseModel         response dynamics model (M1, M2, or M3)
+     * @param requests              sequence of blood requests to process
+     * @param seed                  random seed for event generation and Bernoulli draws
+     * @param tier0Enabled          whether Tier-0 inventory checking is active
+     * @param tier0RadiusKm         maximum search radius for nearby blood banks
+     * @param populationFrequencies baseline blood group frequencies for depletion prioritization
+     * @return summary result and complete event log
+     */
+    public SimulationResult run(
+        World world,
+        Matcher matcher,
+        ResponseModel responseModel,
+        List<BloodRequest> requests,
+        long seed,
+        boolean tier0Enabled,
+        double tier0RadiusKm,
+        Map<BloodGroup, Double> populationFrequencies
+    ) {
         Objects.requireNonNull(world, "world cannot be null");
         Objects.requireNonNull(matcher, "matcher cannot be null");
         Objects.requireNonNull(responseModel, "responseModel cannot be null");
@@ -87,6 +117,13 @@ public final class SimulationRun {
         RandomGenerator rng = new SplittableRandom(seed);
         SimulationParameters params = world.parameters();
         ZoneMap zoneMap = world.zoneMap();
+
+        // Mutable simulation state for bank inventories
+        Map<String, BankInventory> activeBanks = new LinkedHashMap<>();
+        for (BankInventory b : world.bankInventories()) {
+            activeBanks.put(b.bankId(), b);
+        }
+        Tier0InventoryChecker tier0Checker = tier0Enabled ? new Tier0InventoryChecker(zoneMap, tier0RadiusKm) : null;
 
         // Mutable simulation state per donor
         Map<String, LocalDate> donorLastDonation = new HashMap<>();
@@ -167,27 +204,63 @@ public final class SimulationRun {
                             req.units(), req.bloodGroup().code(), req.urgency())
                     ));
 
-                    dispatchNextOutreach(
-                        req,
-                        currentTime,
-                        world,
-                        matcher,
-                        responseModel,
-                        params,
-                        zoneMap,
-                        rng,
-                        donorLastDonation,
-                        donorRecentContacts,
-                        busyDonors,
-                        requestUnitsConfirmed,
-                        requestAttempts,
-                        requestContacted,
-                        resolvedRequests,
-                        fulfilledRequests,
-                        eventLog,
-                        eventQueue,
-                        seqCounter
-                    );
+                    boolean resolvedAtTier0 = false;
+                    if (tier0Enabled && tier0Checker != null) {
+                        Tier0Result t0Result = tier0Checker.check(req, activeBanks.values());
+                        if (t0Result.status() == Tier0Result.Tier0Status.ROUTE_TO_BANK) {
+                            BankInventory bank = activeBanks.get(t0Result.bankId());
+                            BankInventory depletedBank = InventoryDepletionManager.deplete(
+                                bank, req.bloodGroup(), req.units(), populationFrequencies
+                            );
+                            activeBanks.put(bank.bankId(), depletedBank);
+
+                            resolvedRequests.add(reqId);
+                            fulfilledRequests.add(reqId);
+                            requestUnitsConfirmed.put(reqId, req.units());
+
+                            eventLog.add(new SimulationEvent(
+                                currentTime,
+                                SimulationEventType.REQUEST_RESOLVED_TIER0,
+                                reqId,
+                                t0Result.bankId(),
+                                0,
+                                t0Result.message()
+                            ));
+                            eventLog.add(new SimulationEvent(
+                                currentTime,
+                                SimulationEventType.REQUEST_FULFILLED,
+                                reqId,
+                                t0Result.bankId(),
+                                0,
+                                String.format("Request fulfilled at Tier 0 from %s (%d units)", t0Result.bankName(), req.units())
+                            ));
+                            resolvedAtTier0 = true;
+                        }
+                    }
+
+                    if (!resolvedAtTier0) {
+                        dispatchNextOutreach(
+                            req,
+                            currentTime,
+                            world,
+                            matcher,
+                            responseModel,
+                            params,
+                            zoneMap,
+                            rng,
+                            donorLastDonation,
+                            donorRecentContacts,
+                            busyDonors,
+                            requestUnitsConfirmed,
+                            requestAttempts,
+                            requestContacted,
+                            resolvedRequests,
+                            fulfilledRequests,
+                            eventLog,
+                            eventQueue,
+                            seqCounter
+                        );
+                    }
                 }
 
                 case REQUEST_DEADLINE -> {

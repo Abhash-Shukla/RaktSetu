@@ -1,0 +1,24 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Experiment E7: Explanation Faithfulness Evaluation (Claim C5)}
+\label{tab:e7_faithfulness}
+\begin{tabular}{llcc}
+\toprule
+Dimension & Verification Metric & Observed Value & Status \\
+\midrule
+Score Additivity & Total Score Evaluations & 105,393,280 & Verified \\
+Score Additivity & Max Absolute Error & $1.11e-16$ & Passed ($< 10^{-12}$) \\
+Score Additivity & Violation Count & 0 & Zero Violations \\
+\midrule
+Counterfactual & Top-1 Candidate Cases & 17,820 & Evaluated \\
+Counterfactual & Top-1 Rank Flip Rate & 100.0\% & 100\% Agreement \\
+Counterfactual & Top-1 Mean Rank Drop & 3711.5 positions & Robust Drop \\
+Counterfactual & Individual Shift Rate & 100.0\% & Verified \\
+\midrule
+Reason Codes & Catalog Codes Defined & 7 & Catalog Total \\
+Reason Codes & Covered Reason Codes & 7 & 100\% Coverage \\
+Reason Codes & Unsupported Codes & None & Fully Supported \\
+\bottomrule
+\end{tabular}
+\end{table}

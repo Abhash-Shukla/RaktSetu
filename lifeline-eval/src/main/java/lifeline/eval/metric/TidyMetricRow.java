@@ -17,4 +17,8 @@ public record TidyMetricRow(
             experiment, system, responseModel, seed, metric, value
         );
     }
+
+    public static String csvHeader() {
+        return "experiment,system,response_model,seed,metric,value";
+    }
 }

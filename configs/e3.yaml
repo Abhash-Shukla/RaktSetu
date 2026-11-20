@@ -1,0 +1,56 @@
+# E3 Experiment Configuration: Scarcity Sweep & Rarity Weighting Evaluation (Claim C3)
+# Pre-registered per docs/EVALUATION_PROTOCOL.md Section 5 and Decisions D-E3-1, D-E3-2, D-E3-3.
+experiment: E3
+
+# Scarcity sweep multipliers alpha (D-E3-2)
+scarcityMultipliers:
+  - 1.0
+  - 1.5
+  - 2.0
+  - 3.0
+
+# System comparison Option 1 (D-E3-1): S6 (Rarity ON) vs S6_NO_RARITY (Rarity OFF)
+systems:
+  - S6
+  - S6_NO_RARITY
+
+responseModels:
+  - M1
+  - M2
+  - M3
+
+# Pre-registered reporting seeds (1-30) per docs/EVALUATION_PROTOCOL.md Section 6
+seeds:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+
+outputDir: results/e3-final
+

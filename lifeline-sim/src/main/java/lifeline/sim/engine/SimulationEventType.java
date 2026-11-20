@@ -5,6 +5,7 @@ package lifeline.sim.engine;
  */
 public enum SimulationEventType {
     REQUEST_ARRIVED,
+    REQUEST_RESOLVED_TIER0,
     DONOR_NOTIFIED,
     DONOR_ACCEPTED,
     DONOR_DECLINED,

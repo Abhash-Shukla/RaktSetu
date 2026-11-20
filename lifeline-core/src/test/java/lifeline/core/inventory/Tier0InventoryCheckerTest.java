@@ -123,4 +123,37 @@ class Tier0InventoryCheckerTest {
         assertThat(result.status()).isEqualTo(Tier0Result.Tier0Status.ROUTE_TO_BANK);
         assertThat(result.compatibleUnitsFound()).isEqualTo(3);
     }
+
+    @Test
+    @DisplayName("Check all eligible banks: an insufficient nearest bank does not hide sufficient stock at another eligible bank within radius")
+    void insufficientNearestBankDoesNotHideSufficientFartherBank() {
+        Tier0InventoryChecker checker = new Tier0InventoryChecker(zoneMap, 25.0);
+        BloodRequest req = createRequest(BloodGroup.B_POS, 2, "Z1");
+
+        // Nearest bank is in Z1 (distance = 0 km), but has only 1 unit (insufficient for 2 units requested)
+        BankInventory nearestBankInsufficient = new BankInventory(
+            "BANK-NEAR",
+            "Immediate Clinic",
+            "Z1",
+            Map.of(BloodGroup.B_POS, 1),
+            "+91-1111"
+        );
+
+        // Farther bank is in Z2 (~10 km away, well within 25 km radius), and has 3 units (sufficient)
+        BankInventory fartherBankSufficient = new BankInventory(
+            "BANK-FARTHER",
+            "Regional Blood Center",
+            "Z2",
+            Map.of(BloodGroup.B_POS, 3),
+            "+91-2222"
+        );
+
+        Tier0Result result = checker.check(req, List.of(nearestBankInsufficient, fartherBankSufficient));
+
+        // Must successfully route to the farther bank with sufficient stock, NOT fall through
+        assertThat(result.status()).isEqualTo(Tier0Result.Tier0Status.ROUTE_TO_BANK);
+        assertThat(result.bankId()).isEqualTo("BANK-FARTHER");
+        assertThat(result.compatibleUnitsFound()).isEqualTo(3);
+        assertThat(result.distanceKm()).isCloseTo(zoneMap.distanceKm("Z2", "Z1"), org.assertj.core.data.Offset.offset(0.01));
+    }
 }

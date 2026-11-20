@@ -1,0 +1,18 @@
+{
+  "_comment": "TODO(human): At least 200 human-written or human-collected informal blood request messages with ground-truth labels. Per AGENTS.md Section 3 and Phase 8 instructions, do NOT fabricate or generate synthetic messages for this ground-truth research evaluation.",
+  "status": "TODO(human)",
+  "target_count": 200,
+  "description": "Human-collected labeled dataset of informal blood donation request messages, abbreviations, and mixed-language (Hinglish/English) forwarded texts.",
+  "schema": {
+    "id": "Unique integer identifier (1..N)",
+    "raw_text": "Unstructured informal request message",
+    "ground_truth": {
+      "blood_group": "A_POS | A_NEG | B_POS | B_NEG | AB_POS | AB_NEG | O_POS | O_NEG | null",
+      "urgency": "CRITICAL | URGENT | ROUTINE | null",
+      "zone_or_pincode": "string | null",
+      "units": "integer | null",
+      "contact": "string | null"
+    }
+  },
+  "dataset": []
+}

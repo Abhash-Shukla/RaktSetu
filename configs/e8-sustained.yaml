@@ -1,0 +1,23 @@
+# E8 Sustained-Load Configuration: Engine Scalability and Latency Benchmark (Claim C7)
+experiment: E8
+donorPoolSizes:
+  - 1000
+  - 5000
+  - 20000
+  - 50000
+concurrencyLevels:
+  - 1
+  - 10
+  - 50
+  - 100
+warmupIterations: 20
+measuredIterations: 100
+operationsPerConcurrency:
+  1: 100
+  10: 100
+  50: 500
+  100: 1000
+topN: 10
+seed: 1001
+outputDir: results/e8-sustained
+

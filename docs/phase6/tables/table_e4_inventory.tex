@@ -1,0 +1,71 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Experiment E4: Inventory-Level Sweep and Tier-0 Evaluation (Claim C1)}
+\label{tab:e4_inventory}
+\begin{tabular}{lllcccccl}
+\toprule
+Level & Model & Metric & Tier-0 ON & Tier-0 OFF & HL Shift & Cliff's $d$ & Holm $p$ & Decision \\
+\midrule
+\multicolumn{9}{l}{\textbf{Simulated Inventory Level 0PCT}} \\
+\midrule
+0PCT & M1 & donor contacts avoided & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M1 & fulfillment within deadline & 0.514 & 0.514 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M1 & tier0 resolved share & 0.000 & 0.000 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M1 & total notifications sent & 4285.5 & 4285.5 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M2 & donor contacts avoided & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M2 & fulfillment within deadline & 0.358 & 0.358 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M2 & tier0 resolved share & 0.000 & 0.000 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M2 & total notifications sent & 4780.5 & 4780.5 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M3 & donor contacts avoided & 0.0 & 0.0 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M3 & fulfillment within deadline & 0.528 & 0.528 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M3 & tier0 resolved share & 0.000 & 0.000 & +0.000 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+0PCT & M3 & total notifications sent & 4238.4 & 4238.4 & +0.0 & +0.00 & 1.0000 & NO MEANINGFUL DIFFERENCE \\
+\midrule
+\multicolumn{9}{l}{\textbf{Simulated Inventory Level 100PCT}} \\
+\midrule
+100PCT & M1 & donor contacts avoided & 3987.0 & 0.0 & +3992.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M1 & fulfillment within deadline & 0.961 & 0.514 & +0.448 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M1 & tier0 resolved share & 0.938 & 0.000 & +0.939 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M1 & total notifications sent & 298.5 & 4285.5 & -3992.0 & -1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M2 & donor contacts avoided & 4462.1 & 0.0 & +4451.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M2 & fulfillment within deadline & 0.956 & 0.358 & +0.600 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M2 & tier0 resolved share & 0.938 & 0.000 & +0.939 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M2 & total notifications sent & 318.4 & 4780.5 & -4451.0 & -1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M3 & donor contacts avoided & 3944.3 & 0.0 & +3951.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M3 & fulfillment within deadline & 0.965 & 0.528 & +0.438 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M3 & tier0 resolved share & 0.938 & 0.000 & +0.939 & +1.00 & < 0.001 & IMPROVEMENT \\
+100PCT & M3 & total notifications sent & 294.1 & 4238.4 & -3951.5 & -1.00 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Simulated Inventory Level 25PCT}} \\
+\midrule
+25PCT & M1 & donor contacts avoided & 1056.6 & 0.0 & +1056.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M1 & fulfillment within deadline & 0.624 & 0.514 & +0.108 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M1 & tier0 resolved share & 0.261 & 0.000 & +0.261 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M1 & total notifications sent & 3228.8 & 4285.5 & -1056.0 & -1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M2 & donor contacts avoided & 1204.2 & 0.0 & +1203.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M2 & fulfillment within deadline & 0.513 & 0.358 & +0.155 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M2 & tier0 resolved share & 0.261 & 0.000 & +0.261 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M2 & total notifications sent & 3576.3 & 4780.5 & -1203.0 & -1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M3 & donor contacts avoided & 1038.3 & 0.0 & +1037.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M3 & fulfillment within deadline & 0.636 & 0.528 & +0.107 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M3 & tier0 resolved share & 0.261 & 0.000 & +0.261 & +1.00 & < 0.001 & IMPROVEMENT \\
+25PCT & M3 & total notifications sent & 3200.1 & 4238.4 & -1037.5 & -1.00 & < 0.001 & IMPROVEMENT \\
+\midrule
+\multicolumn{9}{l}{\textbf{Simulated Inventory Level 50PCT}} \\
+\midrule
+50PCT & M1 & donor contacts avoided & 2037.6 & 0.0 & +2045.0 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M1 & fulfillment within deadline & 0.742 & 0.514 & +0.228 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M1 & tier0 resolved share & 0.484 & 0.000 & +0.483 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M1 & total notifications sent & 2247.8 & 4285.5 & -2045.0 & -1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M2 & donor contacts avoided & 2311.9 & 0.0 & +2311.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M2 & fulfillment within deadline & 0.675 & 0.358 & +0.318 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M2 & tier0 resolved share & 0.484 & 0.000 & +0.483 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M2 & total notifications sent & 2468.6 & 4780.5 & -2311.5 & -1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M3 & donor contacts avoided & 2033.2 & 0.0 & +2029.5 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M3 & fulfillment within deadline & 0.756 & 0.528 & +0.226 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M3 & tier0 resolved share & 0.484 & 0.000 & +0.483 & +1.00 & < 0.001 & IMPROVEMENT \\
+50PCT & M3 & total notifications sent & 2205.2 & 4238.4 & -2029.5 & -1.00 & < 0.001 & IMPROVEMENT \\
+\bottomrule
+\end{tabular}
+\end{table*}

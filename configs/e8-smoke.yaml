@@ -1,0 +1,14 @@
+# E8 Smoke Configuration for fast verification
+experiment: E8
+donorPoolSizes:
+  - 1000
+  - 5000
+concurrencyLevels:
+  - 1
+  - 10
+warmupIterations: 5
+measuredIterations: 10
+topN: 10
+seed: 1001
+outputDir: results/e8-smoke
+
